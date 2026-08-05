@@ -1,0 +1,9 @@
+# Student data must remain local and be imported through the browser.
+data/*.csv
+data/real-roster.js
+
+# Local browser-review captures may contain student names or initials.
+sortinghat-*.png
+
+.DS_Store
+Thumbs.db

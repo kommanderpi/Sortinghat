@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="An explainable classroom sorting tool for balancing hardware and software skills."
+    />
+    <title>Sorting Hat — Technical Design Foundations</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="Sorting Hat home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img">
+            <path d="M8 35.5h32M15 33l7-21 5 5 3-2 4 18H15Z" />
+            <path d="M19 25c3 2 7 2 11 0M14 39h20" />
+          </svg>
+        </span>
+        <span><strong>Sorting Hat</strong><small>Technical Design Foundations</small></span>
+      </a>
+      <div class="header-actions">
+        <span class="saved-state"><i></i><span>Saved locally</span></span>
+        <button class="button button--quiet" id="restartButton" type="button">New session</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="workspace" aria-label="Sorting workspace">
+        <nav class="step-nav" aria-label="Workflow">
+          <button class="step-tab is-active" data-view="roster" type="button">
+            <span>1</span><strong>Roster</strong><small>Who’s in the room?</small>
+          </button>
+          <button class="step-tab" data-view="scoring" type="button">
+            <span>2</span><strong>Scoring</strong><small>What counts?</small>
+          </button>
+          <button class="step-tab" data-view="results" type="button">
+            <span>3</span><strong>Sort</strong><small>Build two cohorts</small>
+          </button>
+        </nav>
+
+        <section class="view is-active" id="view-roster" aria-labelledby="rosterTitle">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">01 · ROSTER</p>
+              <h2 id="rosterTitle">Bring in the room</h2>
+              <p>Import Google Forms responses or add a student by hand.</p>
+            </div>
+            <div class="section-actions">
+              <label class="button button--secondary file-button">
+                <input id="csvInput" type="file" accept=".csv,text/csv" />
+                <span aria-hidden="true">↑</span> Import CSV
+              </label>
+              <button class="button button--primary" id="addStudentButton" type="button">
+                <span aria-hidden="true">＋</span> Add student
+              </button>
+            </div>
+          </div>
+
+          <aside class="signal-key" aria-labelledby="signalKeyTitle">
+            <div class="signal-key-title">
+              <span aria-hidden="true">↔</span>
+              <div><strong id="signalKeyTitle">How to read the signal</strong><small>Position on the weighted 0–100 spectrum</small></div>
+            </div>
+            <div class="signal-key-item signal-key-item--hardware">
+              <span class="signal-badge hardware">← Hardware</span>
+              <p><strong>Below 42</strong>Hardware evidence is stronger.</p>
+            </div>
+            <div class="signal-key-item signal-key-item--bridge">
+              <span class="signal-badge bridge">↔ Bridge</span>
+              <p><strong>42–58</strong>Hardware and software evidence are balanced.</p>
+            </div>
+            <div class="signal-key-item signal-key-item--software">
+              <span class="signal-badge software">Software →</span>
+              <p><strong>Above 58</strong>Software evidence is stronger.</p>
+            </div>
+          </aside>
+
+          <div class="roster-toolbar">
+            <div>
+              <strong id="studentCount">0 students</strong>
+              <span class="dataset-pill" id="datasetLabel">Sample roster</span>
+            </div>
+            <div class="toolbar-actions">
+              <label class="search-field">
+                <span aria-hidden="true">⌕</span>
+                <span class="sr-only">Search students</span>
+                <input id="studentSearch" type="search" placeholder="Search roster" />
+              </label>
+              <button class="icon-button" id="loadSampleButton" title="Load fictional sample roster" type="button">↻</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="roster-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Signal</th>
+                  <th>Strongest evidence</th>
+                  <th>Responses</th>
+                  <th><span class="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody id="rosterBody"></tbody>
+            </table>
+          </div>
+
+          <div class="view-footer">
+            <p><span id="readinessDot" class="status-dot"></span><span id="readinessText">Ready to score</span></p>
+            <button class="button button--dark" data-next="scoring" type="button">
+              Review scoring <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="view" id="view-scoring" aria-labelledby="scoringTitle">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">02 · SCORING</p>
+              <h2 id="scoringTitle">Decide what counts</h2>
+              <p>Place each questionnaire signal on the spectrum and choose its influence.</p>
+            </div>
+            <div class="section-actions">
+              <button class="button button--quiet" id="turnOffWeightsButton" type="button">Set instructor weights to off</button>
+              <button class="button button--secondary" id="resetWeightsButton" type="button">Reset defaults</button>
+            </div>
+          </div>
+
+          <div class="method-strip">
+            <div><span>1</span><p><strong>Translate</strong>Responses become 0–3 familiarity points.</p></div>
+            <b aria-hidden="true">→</b>
+            <div><span>2</span><p><strong>Position</strong>Signals lean hardware, bridge, or software.</p></div>
+            <b aria-hidden="true">→</b>
+            <div><span>3</span><p><strong>Balance</strong>Two equal cohorts minimize skill gaps.</p></div>
+          </div>
+
+          <section class="rotation-context" aria-labelledby="rotationTitle">
+            <div class="rotation-intro">
+              <span aria-hidden="true">↻</span>
+              <div><strong id="rotationTitle">Two cohorts, two rotations</strong><small>Every student completes both quarter-semester modules.</small></div>
+            </div>
+            <div class="rotation-module rotation-module--physical"><i aria-hidden="true">⌁</i><p><strong>Physical Computing</strong><small>Hardware + computation, producing physical artifacts and things.</small></p></div>
+            <div class="rotation-module rotation-module--computational"><i aria-hidden="true">{ }</i><p><strong>Computational Design</strong><small>Software + AI + simulations, without producing physical artifacts.</small></p></div>
+          </section>
+
+          <div class="model-controls">
+            <div class="formula-card">
+              <button id="formulaToggle" type="button" aria-expanded="true">
+                <span><i aria-hidden="true">ƒ</i> Score formula</span><span aria-hidden="true">⌃</span>
+              </button>
+              <div id="formulaContent">
+                <code>student position = Σ(familiarity × axis × influence) ÷ Σ(familiarity × influence)</code>
+                <p>Blank answers add no evidence. A neutral signal builds confidence without pulling either way.</p>
+              </div>
+            </div>
+            <fieldset class="sort-mode-card">
+              <legend>Cohort strategy</legend>
+              <label>
+                <input type="radio" name="sortMode" value="balanced" checked />
+                <span><strong>Balanced cohorts</strong><small>Give both cohorts a comparable mix of skill signals.</small></span>
+              </label>
+              <label>
+                <input type="radio" name="sortMode" value="split" />
+                <span><strong>Skill-spectrum split</strong><small>Rank the room from hardware to software signals, then divide it approximately 50/50.</small></span>
+              </label>
+            </fieldset>
+          </div>
+
+          <div class="scoring-layout">
+            <div class="weights-card">
+              <div class="weights-header">
+                <div>
+                  <h3>Question weights</h3>
+                  <p>Move a dot to teach the class how assumptions enter the model.</p>
+                </div>
+                <div class="axis-key" aria-hidden="true"><span>HARDWARE</span><i></i><span>SOFTWARE</span></div>
+              </div>
+              <div id="weightsList" class="weights-list"></div>
+            </div>
+
+            <aside class="score-preview">
+              <p class="section-kicker">LIVE PREVIEW</p>
+              <h3>The room, on one line</h3>
+              <div class="spectrum" id="previewSpectrum">
+                <div class="spectrum-line"></div>
+                <span class="spectrum-label spectrum-label--left">Hardware</span>
+                <span class="spectrum-label spectrum-label--center">Bridge</span>
+                <span class="spectrum-label spectrum-label--right">Software</span>
+                <div id="previewDots"></div>
+              </div>
+              <div class="preview-stat-grid">
+                <div><small>Class center</small><strong id="classCenter">—</strong></div>
+                <div><small>Average confidence</small><strong id="classConfidence">—</strong></div>
+              </div>
+              <button class="button button--dark button--wide" id="runSortButton" type="button">
+                <span id="sortButtonLabel">Build balanced cohorts</span><span aria-hidden="true">✦</span>
+              </button>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-results" aria-labelledby="resultsTitle">
+          <div class="section-heading results-heading">
+            <div>
+              <p class="section-kicker">03 · THE SORT</p>
+              <h2 id="resultsTitle">Two cohorts, one shared range</h2>
+              <p id="resultsSummary">Run the sort to build two balanced cohorts.</p>
+            </div>
+            <div class="section-actions">
+              <button class="button button--secondary" id="sortAgainButton" type="button">↻ Sort again</button>
+              <button class="button button--primary" id="exportButton" type="button">↓ Export CSV</button>
+            </div>
+          </div>
+
+          <div class="balance-banner">
+            <div class="balance-score" id="balanceScoreBadge"><strong id="balanceScore">—</strong><span id="balanceDenominator">/ 100</span></div>
+            <div>
+              <p class="section-kicker" id="balanceKicker">BALANCE SCORE</p>
+              <h3 id="balanceTitle">Waiting for a sort</h3>
+              <p id="balanceDescription">We compare size, hardware, software, and total experience across the two cohorts.</p>
+            </div>
+            <div class="balance-metrics" id="balanceMetrics"></div>
+          </div>
+
+          <section class="sort-map" aria-labelledby="sortMapTitle">
+            <header>
+              <div>
+                <p class="section-kicker">THE SORT MAP</p>
+                <h3 id="sortMapTitle">How the cohorts sit on the spectrum</h3>
+                <p id="sortMapSummary">Run the sort to see every student and the class median.</p>
+              </div>
+              <div class="sort-map-legend" aria-label="Cohort colors">
+                <span><i class="cohort-a"></i>Hufflestuff</span>
+                <span><i class="cohort-b"></i>Ravenworks</span>
+              </div>
+            </header>
+            <div class="sort-map-chart" id="sortMapChart">
+              <div class="sort-map-plot" id="sortMapPlot">
+                <div class="sort-map-threshold sort-map-threshold--hardware"><span>42</span></div>
+                <div class="sort-map-threshold sort-map-threshold--software"><span>58</span></div>
+                <div class="sort-map-median" id="sortMapMedian"><span id="sortMapMedianLabel">Median</span></div>
+                <div class="sort-map-cut" id="sortMapCut" hidden><span id="sortMapCutLabel">Cohort cut</span></div>
+                <div id="sortMapStudents"></div>
+              </div>
+              <div class="sort-map-axis-labels"><span>0 · Hardware signals</span><span>Bridge</span><span>Software signals · 100</span></div>
+            </div>
+            <footer id="sortMapNote">Each name will be positioned by its complete weighted questionnaire score.</footer>
+          </section>
+
+          <div class="teams-grid">
+            <article class="team-card team-card--orange" data-team="A">
+              <header><div><span>COHORT 01</span><h3 id="teamAName">Hufflestuff</h3></div><strong id="teamACount">0</strong></header>
+              <div class="team-range" id="teamARange"></div>
+              <div class="team-list" id="teamAList" data-drop-team="A"></div>
+              <footer id="teamAFooter">Drop students here</footer>
+            </article>
+            <article class="team-card team-card--purple" data-team="B">
+              <header><div><span>COHORT 02</span><h3 id="teamBName">Ravenworks</h3></div><strong id="teamBCount">0</strong></header>
+              <div class="team-range" id="teamBRange"></div>
+              <div class="team-list" id="teamBList" data-drop-team="B"></div>
+              <footer id="teamBFooter">Drop students here</footer>
+            </article>
+          </div>
+
+          <p class="drag-hint" id="dragHint">Drag a student between cohorts to challenge the algorithm. The balance score updates instantly.</p>
+
+          <section class="explain-card">
+            <button class="explain-toggle" id="explainToggle" type="button" aria-expanded="true">
+              <span><i aria-hidden="true">◎</i><span><strong>How the hat decided</strong><small>A transparent audit trail for the room</small></span></span>
+              <b aria-hidden="true">⌃</b>
+            </button>
+            <div class="explain-body" id="explainBody">
+              <ol id="decisionLog"></ol>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Sorting Hat · A local-first teaching prototype</span>
+      <span>No names or responses leave this browser.</span>
+    </footer>
+
+    <dialog id="studentDialog" class="modal">
+      <form method="dialog" id="studentForm">
+        <header>
+          <div><p class="section-kicker">STUDENT RESPONSE</p><h2 id="studentDialogTitle">Add a student</h2></div>
+          <button class="modal-close" value="cancel" aria-label="Close" type="submit">×</button>
+        </header>
+        <div class="modal-body">
+          <div class="form-grid">
+            <label>Preferred name <input name="name" required placeholder="e.g. Avery" /></label>
+            <label>Pronouns <input name="pronouns" placeholder="e.g. they/them" /></label>
+            <label class="span-2">Background
+              <select name="experience">
+                <option value="0">No professional experience</option>
+                <option value="1">Less than a year</option>
+                <option value="2">1–3 years</option>
+                <option value="3">More than 3 years</option>
+              </select>
+            </label>
+          </div>
+          <div class="manual-axis">
+            <label for="directPosition">Self-described practice</label>
+            <div><span>Mostly hardware</span><input id="directPosition" name="directPosition" type="range" min="1" max="5" value="3" /><span>Mostly software</span></div>
+            <label class="checkbox-label"><input name="useDirectPosition" type="checkbox" /> Include this direct answer as a signal</label>
+          </div>
+          <fieldset class="area-fieldset">
+            <legend>Professional or academic experience areas</legend>
+            <p>Select every fixed questionnaire answer that applies.</p>
+            <div id="manualAreas" class="manual-areas"></div>
+          </fieldset>
+          <fieldset>
+            <legend>Tool familiarity</legend>
+            <p>Matches the questionnaire’s four-point familiarity scale.</p>
+            <div id="manualSkills" class="manual-skills"></div>
+          </fieldset>
+        </div>
+        <footer>
+          <button class="button button--quiet" value="cancel" type="submit">Cancel</button>
+          <button class="button button--dark" id="saveStudentButton" value="default" type="submit">Add to roster</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
