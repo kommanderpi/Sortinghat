@@ -276,7 +276,7 @@ function buildPreviewLayout(scored) {
 
 function renderResults() {
   const splitMode = state.sortMode === "split";
-  els.resultsTitle.textContent = splitMode ? "One spectrum, two cohorts" : "Two cohorts, one shared range";
+  els.resultsTitle.textContent = splitMode ? "One spectrum, two cohorts" : "The Hat balances the room";
   els.teamAName.textContent = COHORT_NAMES.A;
   els.teamBName.textContent = COHORT_NAMES.B;
   els.balanceKicker.textContent = splitMode ? "COHORT SPLIT" : "BALANCE SCORE";
