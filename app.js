@@ -118,6 +118,7 @@ function init() {
 function cacheElements() {
   [
     "restartButton", "csvInput", "addStudentButton", "studentCount",
+    "landingPage", "enterSite", "brandHome",
     "datasetLabel", "studentSearch", "loadSampleButton", "rosterBody", "readinessDot",
     "readinessText", "turnOffWeightsButton", "resetWeightsButton", "weightsList", "previewDots", "classCenter",
     "classConfidence", "formulaToggle", "formulaContent", "runSortButton", "sortButtonLabel", "sortAgainButton",
@@ -131,6 +132,8 @@ function cacheElements() {
 }
 
 function bindEvents() {
+  els.enterSite.addEventListener("click", enterSite);
+  els.brandHome.addEventListener("click", showLandingPage);
   document.querySelectorAll("[data-view]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view)));
   document.querySelectorAll("[data-next]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.next)));
   els.addStudentButton.addEventListener("click", () => openStudentDialog());
@@ -151,6 +154,18 @@ function bindEvents() {
   els.weightsList.addEventListener("change", handleWeightChange);
   document.querySelectorAll('input[name="sortMode"]').forEach((input) => input.addEventListener("change", handleSortModeChange));
   [els.teamAList, els.teamBList].forEach(bindDropZone);
+}
+
+function enterSite() {
+  document.body.classList.remove("is-landing");
+  requestAnimationFrame(() => document.querySelector(".workspace").scrollIntoView({ block: "start" }));
+}
+
+function showLandingPage(event) {
+  event.preventDefault();
+  document.body.classList.add("is-landing");
+  window.scrollTo({ top: 0, behavior: "auto" });
+  els.enterSite.focus({ preventScroll: true });
 }
 
 function renderAll() {
