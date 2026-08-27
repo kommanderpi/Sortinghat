@@ -86,6 +86,31 @@
             </div>
           </aside>
 
+          <section class="sort-map raw-signal-graph" aria-labelledby="rawSignalTitle" aria-describedby="rawSignalSummary rawSignalNote">
+            <header>
+              <div>
+                <p class="section-kicker">INITIAL RESULTS · RAW QUESTIONS</p>
+                <h3 id="rawSignalTitle">The room before question balancing</h3>
+                <p id="rawSignalSummary">Import or add students to see the raw class distribution.</p>
+              </div>
+              <div class="raw-signal-legend" aria-label="Raw signal bands">
+                <span><i class="raw-hardware"></i>Hardware</span>
+                <span><i class="raw-bridge"></i>Bridge</span>
+                <span><i class="raw-software"></i>Software</span>
+              </div>
+            </header>
+            <div class="sort-map-chart raw-signal-chart" id="rawSignalChart">
+              <div class="sort-map-plot" id="rawSignalPlot">
+                <div class="sort-map-threshold sort-map-threshold--hardware"><span>42</span></div>
+                <div class="sort-map-threshold sort-map-threshold--software"><span>58</span></div>
+                <div class="sort-map-median" id="rawSignalMedian"><span id="rawSignalMedianLabel">Median</span></div>
+                <div id="rawSignalStudents" role="list" aria-label="Students on the raw Hardware to Software spectrum"></div>
+              </div>
+              <div class="sort-map-axis-labels"><span>0 · Hardware signals</span><span>Bridge</span><span>Software signals · 100</span></div>
+            </div>
+            <footer id="rawSignalNote">Every mapped Hardware and Software point uses 1× here, revealing the questionnaire’s unadjusted distribution.</footer>
+          </section>
+
           <div class="roster-toolbar">
             <div>
               <strong id="studentCount">0 students</strong>
@@ -172,6 +197,31 @@
               </div>
               <p id="directionWeightSummary" class="direction-weight-summary"></p>
             </section>
+            <aside class="score-preview" aria-labelledby="scorePreviewTitle">
+              <header>
+                <div>
+                  <p class="section-kicker">LIVE PREVIEW · ADJUSTED</p>
+                  <h3 id="scorePreviewTitle">The room, on one line</h3>
+                </div>
+                <p>Student positions update with the question balance above.</p>
+              </header>
+              <div class="spectrum" id="previewSpectrum" role="group" aria-label="Adjusted student positions from Hardware to Software">
+                <div class="spectrum-line"></div>
+                <span class="spectrum-label spectrum-label--left">Hardware · 0</span>
+                <span class="spectrum-label spectrum-label--center">Bridge · 50</span>
+                <span class="spectrum-label spectrum-label--right">Software · 100</span>
+                <div id="previewDots"></div>
+              </div>
+              <div class="score-preview-footer">
+                <div class="preview-stat-grid">
+                  <div><small>Class center</small><strong id="classCenter">—</strong></div>
+                  <div><small>Average confidence</small><strong id="classConfidence">—</strong></div>
+                </div>
+                <button class="button button--dark" id="runSortButton" type="button">
+                  <span id="sortButtonLabel">Build balanced cohorts</span><span aria-hidden="true">✦</span>
+                </button>
+              </div>
+            </aside>
             <div class="formula-card">
               <button id="formulaToggle" type="button" aria-expanded="true">
                 <span><i aria-hidden="true">ƒ</i> Score formula</span><span aria-hidden="true">⌃</span>
@@ -215,24 +265,6 @@
             <div id="workedExampleBody" class="worked-example-body"></div>
           </section>
 
-          <aside class="score-preview">
-            <p class="section-kicker">LIVE PREVIEW</p>
-            <h3>The room, on one line</h3>
-            <div class="spectrum" id="previewSpectrum">
-              <div class="spectrum-line"></div>
-              <span class="spectrum-label spectrum-label--left">Hardware</span>
-              <span class="spectrum-label spectrum-label--center">Bridge</span>
-              <span class="spectrum-label spectrum-label--right">Software</span>
-              <div id="previewDots"></div>
-            </div>
-            <div class="preview-stat-grid">
-              <div><small>Class center</small><strong id="classCenter">—</strong></div>
-              <div><small>Average confidence</small><strong id="classConfidence">—</strong></div>
-            </div>
-            <button class="button button--dark button--wide" id="runSortButton" type="button">
-              <span id="sortButtonLabel">Build balanced cohorts</span><span aria-hidden="true">✦</span>
-            </button>
-          </aside>
         </section>
 
         <section class="view" id="view-results" aria-labelledby="resultsTitle">

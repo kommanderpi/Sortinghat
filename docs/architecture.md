@@ -10,8 +10,9 @@ flowchart LR
   Manual[Manual student entry] --> State[Browser state]
   Parse --> State
   State --> Raw[Raw scorer: questions as-is]
-  Raw --> Roster[Page 1 roster signal]
+  Raw --> Roster[Page 1 roster and raw signal graph]
   State --> Adjusted[Page 2 scorer: question balance]
+  Adjusted --> Preview[Page 2 horizontal live preview]
   Adjusted --> Worked[Page 2 worked example]
   Adjusted --> Balanced[Balanced cohorts]
   Adjusted --> Split[Skill-spectrum split]
@@ -37,7 +38,9 @@ The mappings are declared in [app.js](../app.js). Their values convey direction 
 
 The roster on Page 1 intentionally shows the questionnaire **as written**. Its signal badge uses `scoreStudentRaw`, which calculates with `RAW_QUESTION_BALANCE`: this produces Hardware `1×` and Software `1×` multipliers. Its strongest-evidence labels are raw reported evidence values, rather than adjusted contributions. The Page 1 key and table label this as the raw questions-as-is signal so that the form’s unequal opportunity counts remain visible. Changing the Page 2 balance slider does not rerender or change this roster signal.
 
-The global Page 2 slider supplies the directional adjustment for `scoreStudent`. The Page 2 class preview, scoring status, worked example, and results render from that adjusted score. The Balanced optimizer’s position and directional metrics, as well as the Skill-spectrum split’s ranking, also use the adjusted score. Thus Page 1 is a stable diagnostic of the raw questionnaire, while Page 2 and cohort decisions reflect the selected question balance.
+Above the roster, the **The room before question balancing** graph plots every loaded student on the same raw 0–100 Hardware-to-Software line. It reports the number of Hardware, Bridge, and Software placements and the median raw position. Its graph renderer uses the complete loaded roster rather than the roster-search result. When points would overlap, it assigns them to collision lanes and raises the graph to fit; a resize observer recomputes that layout when the graph becomes visible or its container changes size. The graph is labelled and described as a section, its student points are exposed as a list, and each point supplies an accessible raw position and band label.
+
+The global Page 2 slider supplies the directional adjustment for `scoreStudent`. Directly beneath it, the Page 2 live preview displays those adjusted scores horizontally: Hardware at `0`, Bridge at `50`, and Software at `100`. It calculates a left-to-right position for each loaded student and places overlaps in vertical collision lanes; the preview recomputes its lanes when its container is resized or becomes visible. It has an accessible group label and each student dot announces that student’s adjusted position and band. The preview, scoring status, worked example, and results render from the adjusted score. The Balanced optimizer’s position and directional metrics, as well as the Skill-spectrum split’s ranking, also use the adjusted score. Thus Page 1 is a stable diagnostic of the raw questionnaire, while Page 2 and cohort decisions reflect the selected question balance.
 
 The form has unequal directional capacity. Maximum raw evidence is calculated from every mapped tool at three points, every mapped area at one point, and every mapped recent activity at three points:
 
@@ -91,9 +94,9 @@ confidence = clamp(questionnaire evidence ÷ possible questionnaire evidence × 
 
 The question-balance slider does not modify either confidence total. A Bridge tool or area can increase confidence without changing directional position. With the current tool definitions, every student has possible tool evidence, so the rendered confidence calculation has a denominator even when every tool response is blank or unfamiliar.
 
-### Page 2 worked example
+### Page 2 preview and worked example
 
-The Scoring page places the global balance control above the formula and cohort-strategy controls. It shows the current Hardware / Software shares, the two resulting point multipliers, and the marked Questions-as-is position. The range input has an accessible label and value text; the marker is also exposed with its ratio and `1×` meaning.
+The Scoring page places the global balance control first, then its horizontal adjusted live preview, then the formula and cohort-strategy controls. The preview’s left-to-right spectrum is labelled Hardware `0`, Bridge `50`, and Software `100`; it also shows the class-center and average-confidence summaries. The balance control shows the current Hardware / Software shares, the two resulting point multipliers, and the marked Questions-as-is position. The range input has an accessible label and value text; the marker is also exposed with its ratio and `1×` meaning.
 
 Moving the slider immediately updates the Page 2 preview, scoring status, worked example, and results display. It does not rerender the Page 1 roster, whose signal remains raw questions-as-is. The change clears existing teams and the decision log because those were produced with a different directional balance, then persists the updated value. The status card and generated decision log disclose the active Hardware and Software multipliers.
 

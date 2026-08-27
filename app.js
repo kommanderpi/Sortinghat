@@ -104,6 +104,7 @@ let state = loadState() || {
 
 let editingId = null;
 let toastTimer = null;
+let layoutFrame = null;
 
 const els = {};
 
@@ -120,6 +121,7 @@ function init() {
     state.teams = null;
   }
   renderAll();
+  setupLayoutObservers();
   const requestedView = params.get("view");
   if (["roster", "scoring", "results"].includes(requestedView)) showView(requestedView);
 }
@@ -128,8 +130,8 @@ function cacheElements() {
   [
     "restartButton", "csvInput", "addStudentButton", "studentCount",
     "landingPage", "enterSite", "brandHome",
-    "datasetLabel", "studentSearch", "loadSampleButton", "rosterBody", "readinessDot",
-    "readinessText", "directionBalance", "directionBalanceOutput", "hardwareBalanceValue", "softwareBalanceValue", "directionWeightSummary", "rawQuestionMarker", "rawQuestionMarkerValue", "previewDots", "classCenter",
+    "datasetLabel", "studentSearch", "loadSampleButton", "rosterBody", "readinessDot", "rawSignalChart", "rawSignalPlot", "rawSignalMedian", "rawSignalMedianLabel", "rawSignalStudents", "rawSignalSummary", "rawSignalNote",
+    "readinessText", "directionBalance", "directionBalanceOutput", "hardwareBalanceValue", "softwareBalanceValue", "directionWeightSummary", "rawQuestionMarker", "rawQuestionMarkerValue", "previewSpectrum", "previewDots", "classCenter",
     "classConfidence", "scoringStatus", "workedExampleStudent", "workedExampleBody", "formulaToggle", "formulaContent", "runSortButton", "sortButtonLabel", "sortAgainButton",
     "exportButton", "resultsTitle", "resultsSummary", "balanceScoreBadge", "balanceScore", "balanceDenominator", "balanceKicker", "balanceTitle", "balanceDescription",
     "balanceMetrics", "teamACount", "teamBCount", "teamAList", "teamBList", "teamARange",
@@ -165,7 +167,10 @@ function bindEvents() {
 
 function enterSite() {
   document.body.classList.remove("is-landing");
-  requestAnimationFrame(() => document.querySelector(".workspace").scrollIntoView({ block: "start" }));
+  requestAnimationFrame(() => {
+    renderRawSignalGraph();
+    document.querySelector(".workspace").scrollIntoView({ block: "start" });
+  });
 }
 
 function showLandingPage(event) {
@@ -178,6 +183,7 @@ function showLandingPage(event) {
 function renderAll() {
   normalizeState();
   renderRoster();
+  renderRawSignalGraph();
   renderDirectionBalance();
   renderPreview();
   renderScoringStatus();
@@ -211,7 +217,29 @@ function showView(name) {
   document.querySelectorAll(".step-tab").forEach((tab) => tab.classList.toggle("is-active", tab.dataset.view === name));
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("is-active", view.id === `view-${name}`));
   if (name === "results" && !state.teams && state.students.length >= 2) runSort(false);
+  requestAnimationFrame(() => {
+    if (name === "roster") renderRawSignalGraph();
+    if (name === "scoring") renderPreview();
+  });
   document.querySelector(".workspace").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function setupLayoutObservers() {
+  const rerenderVisibleLayouts = () => {
+    if (layoutFrame !== null) cancelAnimationFrame(layoutFrame);
+    layoutFrame = requestAnimationFrame(() => {
+      layoutFrame = null;
+      if (els.rawSignalPlot.offsetParent !== null) renderRawSignalGraph();
+      if (els.previewSpectrum.offsetParent !== null) renderPreview();
+    });
+  };
+  if (typeof ResizeObserver === "function") {
+    const observer = new ResizeObserver(rerenderVisibleLayouts);
+    observer.observe(els.rawSignalPlot);
+    observer.observe(els.previewSpectrum);
+  } else {
+    window.addEventListener("resize", rerenderVisibleLayouts);
+  }
 }
 
 function renderRoster() {
@@ -239,11 +267,55 @@ function rosterRow(student) {
   </tr>`;
 }
 
+function buildRawSignalGraphModel(students) {
+  const items = students.map((student) => ({ student, score: scoreStudentRaw(student) }));
+  if (!items.length) return { items, median: 50, hardware: 0, bridge: 0, software: 0 };
+  const positions = items.map((item) => item.score.position).sort((a, b) => a - b);
+  const midpoint = Math.floor(positions.length / 2);
+  const median = positions.length % 2 ? positions[midpoint] : (positions[midpoint - 1] + positions[midpoint]) / 2;
+  const hardware = items.filter((item) => item.score.band === "hardware").length;
+  const software = items.filter((item) => item.score.band === "software").length;
+  return { items, median, hardware, bridge: items.length - hardware - software, software };
+}
+
+function medianLabelEdge(position) {
+  return position <= 5 ? "left" : position >= 95 ? "right" : "center";
+}
+
+function renderRawSignalGraph() {
+  const model = buildRawSignalGraphModel(state.students);
+  els.rawSignalMedian.style.setProperty("--median", `${model.median}%`);
+  els.rawSignalMedian.dataset.edge = medianLabelEdge(model.median);
+  els.rawSignalMedianLabel.textContent = model.items.length ? `Raw median ${model.median.toFixed(1)}` : "Median";
+  els.rawSignalSummary.textContent = model.items.length
+    ? `${model.items.length} students · ${model.hardware} Hardware · ${model.bridge} Bridge · ${model.software} Software · median ${model.median.toFixed(1)}`
+    : "Import or add students to see the raw class distribution.";
+  if (!model.items.length) {
+    els.rawSignalStudents.innerHTML = "";
+    els.rawSignalChart.style.setProperty("--chart-height", "190px");
+    return;
+  }
+  const measuredWidth = els.rawSignalPlot.clientWidth;
+  const plotWidth = measuredWidth || Math.max(960, Math.min(1500, window.innerWidth - 190));
+  const layout = buildSortMapLayout(model.items, plotWidth);
+  const laneCount = Math.max(...layout.map((point) => point.lane)) + 1;
+  els.rawSignalChart.style.setProperty("--chart-height", `${Math.max(220, laneCount * 35 + 93)}px`);
+  els.rawSignalStudents.innerHTML = layout.map(({ item, top, anchor }) => {
+    const position = item.score.position;
+    const label = `${item.student.name}: raw questions-as-is position ${position.toFixed(1)} out of 100; ${item.score.band}`;
+    return `<span class="sort-map-student raw-${item.score.band}" role="listitem" style="--x:${position}%;--y:${top}px;--anchor:${anchor}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}"><span aria-hidden="true">${escapeHtml(item.student.name)}</span><b aria-hidden="true">${position.toFixed(1)}</b></span>`;
+  }).join("");
+}
+
 function renderPreview() {
   const scored = state.students.map((student) => ({ student, ...scoreStudent(student) }));
-  const layout = buildPreviewLayout(scored);
-  els.previewDots.innerHTML = layout.map(({ item, top, offset }) => {
-    return `<span class="preview-dot" style="--top:${top}px;--offset:${offset}px;--dot:${bandColor(item.band)}" title="${escapeHtml(item.student.name)} · ${formatPosition(item.position)}">${initials(item.student.name)}</span>`;
+  const spectrumWidth = els.previewSpectrum.clientWidth || Math.max(640, window.innerWidth - 190);
+  const layout = buildPreviewLayout(scored, spectrumWidth);
+  const laneCount = layout.length ? Math.max(...layout.map((point) => point.lane)) + 1 : 1;
+  els.previewSpectrum.style.setProperty("--preview-height", `${Math.max(145, laneCount * 35 + 74)}px`);
+  els.previewDots.innerHTML = layout.map(({ item, top, left }) => {
+    const label = `${item.student.name}: adjusted position ${item.position.toFixed(1)} out of 100; ${item.band}`;
+    return `<span class="preview-dot" role="img" style="--top:${top}px;--left:${left}%;--dot:${bandColor(item.band)}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}">${initials(item.student.name)}</span>`;
   }).join("");
   const mean = average(scored.map((item) => item.position));
   const confidence = average(scored.map((item) => item.confidence));
@@ -360,23 +432,21 @@ function renderWorkedExampleModel(model) {
     </div>`;
 }
 
-function buildPreviewLayout(scored) {
-  const lanes = [0, -38, 38, -76, 76, -114, 114, -152, 152];
-  const placed = [];
+function buildPreviewLayout(scored, plotWidth = 960) {
+  const lanePositions = [];
+  const usableWidth = Math.max(220, plotWidth - 36);
   return [...scored]
-    .sort((a, b) => b.position - a.position || a.student.name.localeCompare(b.student.name))
+    .sort((a, b) => a.position - b.position || a.student.name.localeCompare(b.student.name))
     .map((item) => {
-      const top = 430 - item.position * 3.75;
-      let offset = lanes.find((lane) => placed.every((point) => Math.abs(point.top - top) >= 31 || Math.abs(point.offset - lane) >= 31));
-      if (offset === undefined) {
-        offset = lanes.reduce((best, lane) => {
-          const clearance = Math.min(...placed.map((point) => Math.hypot(point.top - top, point.offset - lane)));
-          return clearance > best.clearance ? { lane, clearance } : best;
-        }, { lane: 0, clearance: -1 }).lane;
+      const left = clamp(item.position, 0, 100);
+      const pixelLeft = 18 + left / 100 * usableWidth;
+      let lane = lanePositions.findIndex((positions) => positions.every((position) => Math.abs(position - pixelLeft) >= 33));
+      if (lane === -1) {
+        lane = lanePositions.length;
+        lanePositions.push([]);
       }
-      const point = { item, top, offset };
-      placed.push(point);
-      return point;
+      lanePositions[lane].push(pixelLeft);
+      return { item, left, top: 31 + lane * 35, lane };
     });
 }
 

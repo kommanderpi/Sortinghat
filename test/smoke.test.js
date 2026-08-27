@@ -77,7 +77,20 @@ const assertions = `
   assert(scoreStudentRaw(opposedStudent).position === 50, "Page 1 raw scoring should always use 1× Hardware and 1× Software points");
   const rawRosterHtml = rosterRow(opposedStudent);
   assert(rawRosterHtml.includes("signal-badge bridge") && rawRosterHtml.includes("Raw questions-as-is position 50 / 100"), "Page 1 should render the unadjusted raw signal rather than the Page 2 score");
-  assert(indexSource.includes("Signals on this page show the raw, unadjusted questions as-is") && indexSource.includes("<th>Raw signal</th>"), "Page 1 should label its signals as raw and unadjusted");
+  assert(indexSource.includes("Signals on this page show the raw, unadjusted questions as-is") && indexSource.includes("<th>Raw signal</th>") && indexSource.includes("The room before question balancing"), "Page 1 should label its signals and graph as raw and unadjusted");
+  const rawHardwareStudent = sampleStudent("Raw hardware", "", 0, { cad: 4 });
+  const rawSoftwareStudent = sampleStudent("Raw software", "", 0, { javascript: 4 });
+  state.directionBalance = 25;
+  const rawGraphAtHardwareSetting = buildRawSignalGraphModel([rawHardwareStudent, opposedStudent, rawSoftwareStudent]);
+  state.directionBalance = 75;
+  const rawGraphAtSoftwareSetting = buildRawSignalGraphModel([rawHardwareStudent, opposedStudent, rawSoftwareStudent]);
+  assert(rawGraphAtHardwareSetting.hardware === 1 && rawGraphAtHardwareSetting.bridge === 1 && rawGraphAtHardwareSetting.software === 1 && rawGraphAtHardwareSetting.median === 50, "Raw graph should summarize every raw signal and its median");
+  assert(rawGraphAtHardwareSetting.items.map((item) => item.score.position).join(",") === rawGraphAtSoftwareSetting.items.map((item) => item.score.position).join(","), "Raw graph positions should remain independent of the Page 2 slider");
+  assert(buildRawSignalGraphModel([]).items.length === 0 && buildRawSignalGraphModel([]).median === 50, "Raw graph should provide a stable empty state");
+  assert(medianLabelEdge(0) === "left" && medianLabelEdge(50) === "center" && medianLabelEdge(100) === "right", "Raw graph median labels should remain visible at both axis edges");
+  assert(indexSource.includes('role="list" aria-label="Students on the raw Hardware to Software spectrum"') && appSource.includes('role="listitem"'), "Raw graph should expose list semantics for student points");
+  assert(appSource.includes("ResizeObserver") && appSource.includes("renderRawSignalGraph();") && appSource.includes("renderPreview();"), "Responsive graphs should recompute after their containers become visible or resize");
+  state.directionBalance = DEFAULT_DIRECTION_BALANCE;
   const technologyArea = sampleStudent("Technology", "", 0, {});
   technologyArea.areas = ["areaTechnology"];
   assert(scoreStudent(technologyArea).position === 100, "A selected Software area should contribute one Software evidence point");
@@ -197,6 +210,26 @@ const assertions = `
   ];
   const mapLayout = buildSortMapLayout(crowdedMap, 1200);
   assert(mapLayout.length === crowdedMap.length && new Set(mapLayout.map((point) => point.lane)).size === 3, "Sort-map layout should retain and separate crowded students");
+  const narrowMapLayout = buildSortMapLayout(crowdedMap, 240);
+  assert(new Set(narrowMapLayout.map((point) => point.lane)).size === 3, "Raw graph should separate crowded students at a narrow viewport");
+
+  const horizontalPreview = buildPreviewLayout([
+    { student: { name: "Hardware" }, position: 0 },
+    { student: { name: "Bridge" }, position: 50 },
+    { student: { name: "Software" }, position: 100 }
+  ], 900);
+  assert(horizontalPreview.map((point) => point.left).join(",") === "0,50,100", "Page 2 preview should map score position to a horizontal left-to-right axis");
+  assert(horizontalPreview.every((point) => Object.hasOwn(point, "lane") && !Object.hasOwn(point, "offset")), "Page 2 preview should use vertical collision lanes on its horizontal axis");
+  const crowdedPreview = buildPreviewLayout([
+    { student: { name: "A" }, position: 50 },
+    { student: { name: "B" }, position: 50 },
+    { student: { name: "C" }, position: 50 }
+  ], 240);
+  assert(new Set(crowdedPreview.map((point) => point.lane)).size === 3, "Horizontal preview should separate overlapping students into rows");
+  const balanceCardIndex = indexSource.indexOf('class="direction-balance-card"');
+  const previewIndex = indexSource.indexOf('class="score-preview"');
+  const formulaIndex = indexSource.indexOf('class="formula-card"');
+  assert(balanceCardIndex < previewIndex && previewIndex < formulaIndex, "Adjusted live preview should sit directly below the Page 2 balance slider");
 
   const headers = [
     "What is your preferred name?",
@@ -218,5 +251,5 @@ const assertions = `
 const documentStub = { addEventListener() {} };
 const localStorageStub = { getItem() { return null; }, setItem() {} };
 
-const execute = new Function("document", "localStorage", "structuredClone", "indexSource", source + assertions);
-execute(documentStub, localStorageStub, structuredClone, indexSource);
+const execute = new Function("document", "localStorage", "structuredClone", "indexSource", "appSource", source + assertions);
+execute(documentStub, localStorageStub, structuredClone, indexSource, source);
