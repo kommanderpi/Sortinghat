@@ -5,8 +5,10 @@ const path = require("node:path");
 
 const appPath = path.join(__dirname, "..", "app.js");
 const indexPath = path.join(__dirname, "..", "index.html");
+const stylesPath = path.join(__dirname, "..", "styles.css");
 const source = fs.readFileSync(appPath, "utf8");
 const indexSource = fs.readFileSync(indexPath, "utf8");
+const stylesSource = fs.readFileSync(stylesPath, "utf8");
 
 const cacheList = source.match(/function cacheElements\(\) \{\s*\[([\s\S]*?)\]\.forEach/);
 if (!cacheList) throw new Error("Could not find the cached-element list");
@@ -230,6 +232,14 @@ const assertions = `
   const previewIndex = indexSource.indexOf('class="score-preview"');
   const formulaIndex = indexSource.indexOf('class="formula-card"');
   assert(balanceCardIndex < previewIndex && previewIndex < formulaIndex, "Adjusted live preview should sit directly below the Page 2 balance slider");
+  assert(indexSource.includes("A student’s conversation with the Hat"), "Page 2 worked example should frame the score as a student conversation with the Hat");
+  assert(indexSource.includes("Numerator N = Σ(evidence × direction × category balance) + m") && indexSource.includes("Denominator D = Σ(evidence × |direction| × category balance) + |m|") && indexSource.includes("The denominator measures total directional evidence, so it is never negative"), "The full scoring panel should clearly explain the complete numerator and denominator maths");
+  assert(indexSource.includes("3 Hardware points + 1 Software point") && indexSource.includes("position 25") && indexSource.includes("signed Hardware evidence is greater"), "The scoring panel should derive a concrete position from actual directional evidence");
+  assert(stylesSource.includes('.model-controls .direction-balance-card, .model-controls .score-preview, .model-controls .formula-card, .model-controls .sort-mode-card { grid-column: 1 / -1; }'), "Formula and cohort-strategy panels should each span the full Page 2 width");
+  const controlsIndex = indexSource.indexOf('class="model-controls"');
+  const strategyIndex = indexSource.indexOf('class="sort-mode-card"');
+  const scoringStatusIndex = indexSource.indexOf('class="scoring-status"');
+  assert(controlsIndex < formulaIndex && formulaIndex < strategyIndex && strategyIndex < scoringStatusIndex, "Full-width formula and cohort-strategy panels should remain in the Page 2 controls flow");
 
   const headers = [
     "What is your preferred name?",
@@ -251,5 +261,5 @@ const assertions = `
 const documentStub = { addEventListener() {} };
 const localStorageStub = { getItem() { return null; }, setItem() {} };
 
-const execute = new Function("document", "localStorage", "structuredClone", "indexSource", "appSource", source + assertions);
-execute(documentStub, localStorageStub, structuredClone, indexSource, source);
+const execute = new Function("document", "localStorage", "structuredClone", "indexSource", "appSource", "stylesSource", source + assertions);
+execute(documentStub, localStorageStub, structuredClone, indexSource, source, stylesSource);

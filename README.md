@@ -32,7 +32,7 @@ The score is driven by reported student evidence. Mappings only classify evidenc
 
 A tool response supplies 0–3 points (`response − 1`, with blank and unfamiliar both 0); a selected area supplies one point; recent activity uses its reported level (0–3); and an optional manual choice supplies its signed distance from choice 3. The slider affects mapped tools, areas, and activities, but not Bridge mappings, confidence, or the manual response.
 
-Page 2 provides a live, student-specific worked example with every contribution, the signed numerator, directional denominator, placement, and response confidence. Choose either:
+Page 2 labels its live, student-specific worked example **A student’s conversation with the Hat**. It shows every contribution, the signed numerator, directional denominator, placement, and response confidence. Its full-width scoring-maths panel explains the four calculation stages and a concrete evidence example; the separate full-width cohort-strategy panel then offers either:
 
 - **Balanced cohorts** — distributes the room to reduce gaps in position, hardware and software evidence, confidence, experience, and avoidable size. Its balancing optimizer still uses fixed trade-off coefficients; those affect cohort assignment, not a student's evidence strength or placement.
 - **Skill-spectrum split** — ranks the room on the line and divides it approximately 50/50.

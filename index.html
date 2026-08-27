@@ -222,20 +222,34 @@
                 </button>
               </div>
             </aside>
-            <div class="formula-card">
+            <section class="formula-card" aria-labelledby="formulaTitle">
               <button id="formulaToggle" type="button" aria-expanded="true">
-                <span><i aria-hidden="true">ƒ</i> Score formula</span><span aria-hidden="true">⌃</span>
+                <span class="formula-title"><i aria-hidden="true">ƒ</i><span><small>SCORING MATHS</small><strong id="formulaTitle">How responses become a position</strong></span></span><span aria-hidden="true">⌃</span>
               </button>
               <div id="formulaContent">
-                <code>evidence = tool response − 1 (0 for blank/unfamiliar); selected area = 1</code>
-                <code>direction = Hardware −1, Bridge 0, Software +1</code>
-                <code>signed = evidence × direction × category balance</code>
-                <code>directional = evidence × |direction| × category balance</code>
-                <code>normalized = Σ(signed contribution) ÷ Σ(directional contribution)</code>
-                <code>position = 50 + (normalized × 50)</code>
-                <p>Blank and unfamiliar answers add no evidence. The category-balance slider applies one shared multiplier to all Hardware questions and another to all Software questions. It never changes one tool relative to another on the same side; manual distance remains unadjusted.</p>
+                <p class="formula-intro">The Hat turns each reported response into evidence, gives that evidence a direction, and compares the signed total with the total amount of directional evidence.</p>
+                <ol class="formula-steps">
+                  <li>
+                    <span>1</span>
+                    <div><h4>Turn responses into evidence</h4><p>Tool familiarity becomes <code>response − 1</code>, giving 0–3 points. Blank and unfamiliar answers give 0. Each selected professional area gives 1 point; recent activity uses its reported 0–3 level.</p></div>
+                  </li>
+                  <li>
+                    <span>2</span>
+                    <div><h4>Give every point a direction</h4><p>Hardware is <code>−1</code>, Bridge is <code>0</code>, and Software is <code>+1</code>. The slider applies the same Hardware multiplier to every Hardware point and the same Software multiplier to every Software point.</p></div>
+                  </li>
+                  <li>
+                    <span>3</span>
+                    <div><h4>Build the two totals</h4><div class="formula-equations"><code>manual m = choice − 3 (or 0 when unused)</code><code>Numerator N = Σ(evidence × direction × category balance) + m</code><code>Denominator D = Σ(evidence × |direction| × category balance) + |m|</code></div><p>The numerator keeps the sign: negative pulls toward Hardware and positive pulls toward Software. The denominator measures total directional evidence, so it is never negative. Bridge evidence adds confidence but adds 0 to both directional totals.</p></div>
+                  </li>
+                  <li>
+                    <span>4</span>
+                    <div><h4>Place the student on the 0–100 line</h4><div class="formula-equations"><code>normalized direction = N ÷ D</code><code>position = 50 + (normalized direction × 50)</code></div><p>If there is no directional evidence, the position is 50. Otherwise, −1 maps to Hardware 0, 0 maps to Bridge 50, and +1 maps to Software 100.</p></div>
+                  </li>
+                </ol>
+                <div class="formula-example"><strong>Quick example · questions as-is</strong><code>3 Hardware points + 1 Software point → N = (3 × −1) + (1 × +1) = −2 · D = (3 × 1) + (1 × 1) = 4 → −2 ÷ 4 = −0.5 → position 25</code><span>The student lands toward Hardware because the signed Hardware evidence is greater.</span></div>
+                <p class="formula-note">Manual choice is optional. Choices 1–2 add a negative Hardware pull, choice 3 adds 0, and choices 4–5 add a positive Software pull. Manual distance is not changed by the question-balance slider and is listed separately in the student conversation below.</p>
               </div>
-            </div>
+            </section>
             <fieldset class="sort-mode-card">
               <legend>Cohort strategy</legend>
               <label>
@@ -255,8 +269,8 @@
             <div class="worked-example-header">
               <div>
                 <p class="section-kicker">WORKED EXAMPLE</p>
-                <h3 id="workedExampleTitle">Follow one student onto the line</h3>
-                <p>Select a student to see how their responses become a live score.</p>
+                <h3 id="workedExampleTitle">A student’s conversation with the Hat</h3>
+                <p>Select a student to see how the Hat interprets each response and reaches a live score.</p>
               </div>
               <label for="workedExampleStudent">Student
                 <select id="workedExampleStudent" aria-controls="workedExampleBody"></select>
