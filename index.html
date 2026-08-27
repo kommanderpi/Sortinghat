@@ -129,7 +129,7 @@
             <div>
               <p class="section-kicker">02 · SCORING</p>
               <h2 id="scoringTitle">See how the data places the room</h2>
-              <p>Student responses use fixed signal mappings to build a transparent hardware–software position.</p>
+              <p>Student responses supply equal-strength evidence points along categorical Hardware, Bridge, and Software directions.</p>
             </div>
           </div>
 
@@ -156,11 +156,12 @@
                 <span><i aria-hidden="true">ƒ</i> Score formula</span><span aria-hidden="true">⌃</span>
               </button>
               <div id="formulaContent">
-                <code>evidence = tool response − 1 (0 for blank/unfamiliar); selected area = 2</code>
-                <code>questionnaire: signed = evidence × axis; directional = evidence × |axis|</code>
+                <code>evidence = tool response − 1 (0 for blank/unfamiliar); selected area = 1</code>
+                <code>direction = Hardware −1, Bridge 0, Software +1</code>
+                <code>signed = evidence × direction; directional = evidence × |direction|</code>
                 <code>normalized = Σ(signed contribution) ÷ Σ(directional contribution)</code>
                 <code>position = 50 + (normalized × 50)</code>
-                <p>Blank and unfamiliar answers add no evidence. Every tool and selected professional area uses its fixed built-in axis at equal 1×. Recent activities use their fixed 0.65 multiplier, and a manual direct-position signal uses its fixed rule.</p>
+                <p>Blank and unfamiliar answers add no evidence. Every reported evidence point has equal strength: tools, selected professional areas, recent activities, and manual distance from the center are never multiplied by a tool-specific importance value.</p>
               </div>
             </div>
             <fieldset class="sort-mode-card">
@@ -257,7 +258,7 @@
               </div>
               <div class="sort-map-axis-labels"><span>0 · Hardware signals</span><span>Bridge</span><span>Software signals · 100</span></div>
             </div>
-            <footer id="sortMapNote">Each name will be positioned by student responses using the fixed built-in signal mappings.</footer>
+            <footer id="sortMapNote">Each name is positioned by equal-strength student evidence points and categorical directions.</footer>
           </section>
 
           <div class="teams-grid">

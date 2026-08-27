@@ -26,14 +26,14 @@ Export the Google Forms responses as CSV. The importer recognizes preferred name
 
 ## Scoring and cohort strategies
 
-There are no instructor weighting controls. Tool and selected-area responses use their fixed built-in hardware/software axes at equal 1×. A tool response becomes 0–3 evidence points; a selected area contributes 2. Recent activity uses its fixed axis and a 0.65 multiplier. An optional manual direct-position response uses a separate fixed rule.
+The score is driven by reported student evidence, with no instructor weighting controls or tool-specific strength values. Every contribution is classified only as Hardware (`−1`), Bridge (`0`), or Software (`+1`), and every raw evidence point has equal placement strength. A tool response supplies 0–3 points (`response − 1`, with blank and unfamiliar both 0); a selected area supplies one point; recent activity uses its reported level (0–3); and an optional manual choice supplies its signed distance from choice 3.
 
 Page 2 provides a live, student-specific worked example with every contribution, the signed numerator, directional denominator, placement, and response confidence. Choose either:
 
-- **Balanced cohorts** — distributes the room to reduce gaps in position, hardware and software evidence, confidence, experience, and avoidable size.
+- **Balanced cohorts** — distributes the room to reduce gaps in position, hardware and software evidence, confidence, experience, and avoidable size. Its balancing optimizer still uses fixed trade-off coefficients; those affect cohort assignment, not a student's evidence strength or placement.
 - **Skill-spectrum split** — ranks the room on the line and divides it approximately 50/50.
 
-See [the scoring architecture](docs/architecture.md#scoring-and-sorting) for the fixed mappings and formulas, and [development notes](docs/development.md) for verification and local-state details.
+See [the scoring architecture](docs/architecture.md#scoring-and-sorting) for mappings and formulas, and [development notes](docs/development.md) for verification and local-state details.
 
 ## Deployment and data safety
 

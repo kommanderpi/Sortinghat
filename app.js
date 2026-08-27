@@ -1,53 +1,54 @@
 "use strict";
 
 const STORAGE_KEY = "desinv-sortinghat-v4";
+const SCORING_MODEL_VERSION = 2;
 const COHORT_NAMES = { A: "Hufflestuff", B: "Ravenworks" };
 
 const TOOL_DEFINITIONS = [
-  { key: "prototyping", label: "Prototyping", category: "Making", axis: -1.4 },
-  { key: "cad", label: "CAD (Rhino, etc.)", category: "Making", axis: -2.2 },
-  { key: "parametric", label: "Parametric modelling", category: "Making + code", axis: -0.8 },
-  { key: "database", label: "Databases (MySQL, etc.)", category: "Software", axis: 2.5 },
-  { key: "machineLearning", label: "Machine learning", category: "Software", axis: 2.5 },
-  { key: "microcontrollers", label: "Microcontrollers (Arduino, etc.)", category: "Electronics", axis: -3 },
-  { key: "electronics", label: "Electronics (sensors + actuators)", category: "Electronics", axis: -3 },
-  { key: "webhooks", label: "Webhooks", category: "Software", axis: 2.7 },
-  { key: "api", label: "APIs", category: "Software", axis: 2.7 },
-  { key: "javascript", label: "JavaScript (p5.js, etc.)", category: "Creative code", axis: 3 },
-  { key: "printing3d", label: "3D printing", category: "Fabrication", axis: -2.6 },
-  { key: "laserCutting", label: "Laser cutting", category: "Fabrication", axis: -2.8 },
-  { key: "figma", label: "Figma", category: "Interface", axis: 0.8 },
-  { key: "github", label: "GitHub", category: "Software practice", axis: 2.5 },
-  { key: "copilot", label: "GitHub Copilot", category: "Software practice", axis: 2.3 },
-  { key: "vscode", label: "Visual Studio Code", category: "Software practice", axis: 2.5 },
-  { key: "visualStudio", label: "Visual Studio", category: "Software practice", axis: 2.3 },
-  { key: "openai", label: "OpenAI (ChatGPT)", category: "AI", axis: 1.8 },
-  { key: "llm", label: "Large language models", category: "AI", axis: 2.2 },
+  { key: "prototyping", label: "Prototyping", category: "Making", axis: -1 },
+  { key: "cad", label: "CAD (Rhino, etc.)", category: "Making", axis: -1 },
+  { key: "parametric", label: "Parametric modelling", category: "Making + code", axis: -1 },
+  { key: "database", label: "Databases (MySQL, etc.)", category: "Software", axis: 1 },
+  { key: "machineLearning", label: "Machine learning", category: "Software", axis: 1 },
+  { key: "microcontrollers", label: "Microcontrollers (Arduino, etc.)", category: "Electronics", axis: -1 },
+  { key: "electronics", label: "Electronics (sensors + actuators)", category: "Electronics", axis: -1 },
+  { key: "webhooks", label: "Webhooks", category: "Software", axis: 1 },
+  { key: "api", label: "APIs", category: "Software", axis: 1 },
+  { key: "javascript", label: "JavaScript (p5.js, etc.)", category: "Creative code", axis: 1 },
+  { key: "printing3d", label: "3D printing", category: "Fabrication", axis: -1 },
+  { key: "laserCutting", label: "Laser cutting", category: "Fabrication", axis: -1 },
+  { key: "figma", label: "Figma", category: "Interface", axis: 1 },
+  { key: "github", label: "GitHub", category: "Software practice", axis: 1 },
+  { key: "copilot", label: "GitHub Copilot", category: "Software practice", axis: 1 },
+  { key: "vscode", label: "Visual Studio Code", category: "Software practice", axis: 1 },
+  { key: "visualStudio", label: "Visual Studio", category: "Software practice", axis: 1 },
+  { key: "openai", label: "OpenAI (ChatGPT)", category: "AI", axis: 1 },
+  { key: "llm", label: "Large language models", category: "AI", axis: 1 },
   { key: "instruments", label: "Musical instruments", category: "Creative practice", axis: 0 },
   { key: "projectManagement", label: "Project management tools", category: "Collaboration", axis: 0 },
-  { key: "nlp", label: "Natural language processing", category: "AI", axis: 2.5 }
+  { key: "nlp", label: "Natural language processing", category: "AI", axis: 1 }
 ];
 
 const AREA_DEFINITIONS = [
-  { key: "areaTechnology", value: "Technology and Software Development", label: "Technology + software development", category: "Background", axis: 3 },
-  { key: "areaManufacturing", value: "Manufacturing and Engineering", label: "Manufacturing + engineering", category: "Background", axis: -3 },
+  { key: "areaTechnology", value: "Technology and Software Development", label: "Technology + software development", category: "Background", axis: 1 },
+  { key: "areaManufacturing", value: "Manufacturing and Engineering", label: "Manufacturing + engineering", category: "Background", axis: -1 },
   { key: "areaDesign", value: "Design (Graphic, UX/UI, Industrial)", label: "Design (graphic, UX/UI, industrial)", category: "Background", axis: 0 },
   { key: "areaMarketing", value: "Marketing and Sales", label: "Marketing + sales", category: "Background", axis: 0 },
   { key: "areaHealthcare", value: "Healthcare and Medical Services", label: "Healthcare + medical services", category: "Background", axis: 0 },
   { key: "areaFinance", value: "Finance and Accounting", label: "Finance + accounting", category: "Background", axis: 1 },
   { key: "areaEducation", value: "Education and Training", label: "Education + training", category: "Background", axis: 0 },
   { key: "areaNonprofit", value: "Non-Profit and Social Impact", label: "Non-profit + social impact", category: "Background", axis: 0 },
-  { key: "areaMedia", value: "Media and Entertainment", label: "Media + entertainment", category: "Background", axis: 0.5 }
+  { key: "areaMedia", value: "Media and Entertainment", label: "Media + entertainment", category: "Background", axis: 1 }
 ];
 
 const SIGNAL_DEFINITIONS = [...TOOL_DEFINITIONS, ...AREA_DEFINITIONS];
 
 const ACTIVITY_SIGNALS = [
-  { key: "activityGithub", match: ["contributed to a public or private github repo"], axis: 2.5 },
-  { key: "activityMicro", match: ["prototype using microcontrollers"], axis: -3 },
-  { key: "activityCad", match: ["sketch or drawing using a cad tool"], axis: -2.3 },
-  { key: "activityWritingAi", match: ["assistant or ai like chatgpt"], axis: 1.6 },
-  { key: "activityImageAi", match: ["generative ai like midjourney"], axis: 1.5 }
+  { key: "activityGithub", match: ["contributed to a public or private github repo"], axis: 1 },
+  { key: "activityMicro", match: ["prototype using microcontrollers"], axis: -1 },
+  { key: "activityCad", match: ["sketch or drawing using a cad tool"], axis: -1 },
+  { key: "activityWritingAi", match: ["assistant or ai like chatgpt"], axis: 1 },
+  { key: "activityImageAi", match: ["generative ai like midjourney"], axis: 1 }
 ];
 
 const SAMPLE_STUDENTS = [
@@ -82,6 +83,7 @@ function sampleStudent(name, pronouns, experience, skills) {
 
 let state = loadState() || {
   students: structuredClone(COURSE_STUDENTS),
+  scoringModelVersion: SCORING_MODEL_VERSION,
   datasetLabel: COURSE_DATASET_LABEL,
   sortMode: "balanced",
   teams: null,
@@ -175,10 +177,15 @@ function normalizeState() {
   state.students ||= [];
   state.datasetLabel ||= "Local roster";
   state.sortMode ||= "balanced";
-  if (Object.prototype.hasOwnProperty.call(state, "weights")) {
+  const scoringModelChanged = state.scoringModelVersion !== SCORING_MODEL_VERSION;
+  const hadLegacyWeights = Object.prototype.hasOwnProperty.call(state, "weights");
+  if (hadLegacyWeights) {
     delete state.weights;
+  }
+  if (scoringModelChanged || hadLegacyWeights) {
     state.teams = null;
     state.decisionLog = [];
+    state.scoringModelVersion = SCORING_MODEL_VERSION;
   }
 }
 
@@ -229,11 +236,11 @@ function renderPreview() {
 function getScoringStatus() {
   const balanced = state.sortMode === "balanced";
   return {
-    title: "Student responses drive a fixed scoring model",
+    title: "Student responses alone determine evidence strength",
     description: balanced
-      ? "Tool familiarity and professional-area answers use fixed built-in hardware–software directions at equal 1×. Recent activities use 0.65 and manual placement keeps its fixed rule. The Hat then balances position, confidence, experience, and cohort size."
-      : "Tool familiarity and professional-area answers use fixed built-in hardware–software directions at equal 1×. Recent activities use 0.65 and manual placement keeps its fixed rule before the ranked 50/50 split.",
-    details: [`${SIGNAL_DEFINITIONS.length} fixed mappings`, "Equal 1× questionnaire evidence", balanced ? "Position + confidence balance" : "Ranked median split"]
+      ? "Each reported evidence point counts equally. Questions supply only Hardware, Bridge, or Software direction; no tool, area, activity, or manual response has a strength multiplier. The Hat then balances position, confidence, experience, and cohort size."
+      : "Each reported evidence point counts equally. Questions supply only Hardware, Bridge, or Software direction; no tool, area, activity, or manual response has a strength multiplier before the ranked 50/50 split.",
+    details: [`${SIGNAL_DEFINITIONS.length} categorical mappings`, "Equal-strength evidence points", balanced ? "Position + confidence balance" : "Ranked median split"]
   };
 }
 
@@ -288,7 +295,7 @@ function renderWorkedExampleModel(model) {
     <div class="worked-example-result">
       <div><small>Position arithmetic</small><code>${escapeHtml(positionMath)}</code></div>
       <div><small>Final placement</small><strong>${formatNumber(model.position)} / 100 · ${capitalize(model.band)}</strong><span>${escapeHtml(formatPosition(model.position))}</span></div>
-      <div><small>Response confidence</small><code>${escapeHtml(confidenceText)}</code>${model.confidenceUnavailable ? "" : "<span>Possible evidence includes every tool at 3 points—even when blank or unfamiliar—and each selected area at 2 points.</span>"}</div>
+      <div><small>Response confidence</small><code>${escapeHtml(confidenceText)}</code>${model.confidenceUnavailable ? "" : "<span>Possible evidence includes every tool at 3 points—even when blank or unfamiliar—and one point for each selected area.</span>"}</div>
     </div>`;
 }
 
@@ -379,7 +386,7 @@ function renderSortMap(cohortA, cohortB) {
     els.sortMapCut.hidden = true;
     els.sortMapStudents.innerHTML = "";
     els.sortMapChart.style.setProperty("--chart-height", "250px");
-    els.sortMapNote.textContent = "Each name will be positioned by student responses using the fixed built-in signal mappings.";
+    els.sortMapNote.textContent = "Each name is positioned by equal-strength student evidence points and categorical directions.";
     return;
   }
 
@@ -468,7 +475,7 @@ function renderTeam(name, students) {
 function renderDecisionLog() {
   const fallback = [
     "<strong>Translate:</strong> familiarity answers become 0–3 evidence points.",
-    "<strong>Position:</strong> each questionnaire answer uses its fixed built-in axis at equal 1×.",
+    "<strong>Position:</strong> each evidence point counts equally in its categorical Hardware, Bridge, or Software direction.",
     "<strong>Balance:</strong> the hat searches for equal-size cohorts with similar hardware, software, and experience totals."
   ];
   els.decisionLog.innerHTML = (state.decisionLog.length ? state.decisionLog : fallback).map((entry) => `<li>${entry}</li>`).join("");
@@ -508,37 +515,38 @@ function calculateScoreBreakdown(student, includeContributions = true) {
     possibleEvidence += 3;
     if (tool.axis < 0) hardware += evidence * Math.abs(tool.axis);
     if (tool.axis > 0) software += evidence * tool.axis;
-    if (includeContributions && evidence) contributions.push({ label: tool.label, context: `Tool response ${response} → evidence ${evidence}; fixed built-in axis at equal 1×`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(tool.axis)}`, signed: signedContribution, directional: directionalContribution });
+    if (includeContributions && evidence) contributions.push({ label: tool.label, context: `Tool response ${response} → evidence ${evidence}; ${directionLabel(tool.axis)}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(tool.axis)}`, signed: signedContribution, directional: directionalContribution });
   });
   AREA_DEFINITIONS.forEach((area) => {
     if (!student.areas?.includes(area.key)) return;
-    const evidence = 2;
+    const evidence = 1;
     const signedContribution = evidence * area.axis;
     const directionalContribution = evidence * Math.abs(area.axis);
     signed += signedContribution;
     directionalEvidence += directionalContribution;
     allEvidence += evidence;
-    possibleEvidence += 2;
+    possibleEvidence += 1;
     if (area.axis < 0) hardware += evidence * Math.abs(area.axis);
     if (area.axis > 0) software += evidence * area.axis;
-    if (includeContributions) contributions.push({ label: area.label, context: "Selected area → fixed evidence 2; fixed built-in axis at equal 1×", signedFormula: `2 × ${formatNumber(area.axis)}`, signed: signedContribution, directional: directionalContribution });
+    if (includeContributions) contributions.push({ label: area.label, context: `Selected area → one evidence point; ${directionLabel(area.axis)}`, signedFormula: `1 × ${formatNumber(area.axis)}`, signed: signedContribution, directional: directionalContribution });
   });
   ACTIVITY_SIGNALS.forEach((signal) => {
     const evidence = clamp(Number(student.activities?.[signal.key]) || 0, 0, 3);
-    const signedContribution = evidence * signal.axis * 0.65;
-    const directionalContribution = evidence * Math.abs(signal.axis) * 0.65;
+    const signedContribution = evidence * signal.axis;
+    const directionalContribution = evidence * Math.abs(signal.axis);
     signed += signedContribution;
     directionalEvidence += directionalContribution;
-    if (signal.axis < 0) hardware += evidence * Math.abs(signal.axis) * 0.65;
-    else software += evidence * signal.axis * 0.65;
-    if (includeContributions && evidence) contributions.push({ label: activityLabel(signal.key), context: `Recent activity level ${evidence}; fixed 0.65 multiplier`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(signal.axis)} × 0.65`, signed: signedContribution, directional: directionalContribution });
+    if (signal.axis < 0) hardware += evidence;
+    else software += evidence;
+    if (includeContributions && evidence) contributions.push({ label: activityLabel(signal.key), context: `Recent activity level ${evidence}; ${directionLabel(signal.axis)}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(signal.axis)}`, signed: signedContribution, directional: directionalContribution });
   });
   if (student.directPosition != null) {
     const direct = clamp(Number(student.directPosition), 1, 5);
-    const signedContribution = (direct - 3) * 6;
+    const signedContribution = direct - 3;
+    const directionalContribution = Math.abs(signedContribution);
     signed += signedContribution;
-    directionalEvidence += 12;
-    if (includeContributions) contributions.push({ label: "Manual direct position", context: `Choice ${direct} of 5; fixed center 3, scale 6, denominator 12`, signedFormula: `(${formatNumber(direct)} − 3) × 6`, signed: signedContribution, directional: 12 });
+    directionalEvidence += directionalContribution;
+    if (includeContributions) contributions.push({ label: "Manual direct position", context: `Choice ${direct} of 5; raw distance from center 3`, signedFormula: `${formatNumber(direct)} − 3`, signed: signedContribution, directional: directionalContribution });
   }
   const normalized = directionalEvidence ? signed / directionalEvidence : 0;
   const position = clamp(50 + normalized * 50, 0, 100);
@@ -559,7 +567,7 @@ function strongestEvidence(student) {
   }));
   const areaEvidence = AREA_DEFINITIONS.filter((area) => student.areas?.includes(area.key)).map((area) => ({
     label: area.label,
-    value: 2,
+    value: 1,
   }));
   return [...toolEvidence, ...areaEvidence]
     .filter((item) => item.value > 0)
@@ -620,8 +628,8 @@ function runSort(navigate = true) {
   }
   state.teams = { A: A.map((student) => student.id), B: B.map((student) => student.id) };
   const finalBalance = calculateBalance(A, B);
-  const hardwareSignals = SIGNAL_DEFINITIONS.filter((signal) => signal.axis < -1).length;
-  const softwareSignals = SIGNAL_DEFINITIONS.filter((signal) => signal.axis > 1).length;
+  const hardwareSignals = SIGNAL_DEFINITIONS.filter((signal) => signal.axis < 0).length;
+  const softwareSignals = SIGNAL_DEFINITIONS.filter((signal) => signal.axis > 0).length;
   if (state.sortMode === "split") {
     const aPositions = A.map((student) => scoreStudent(student).position);
     const bPositions = B.map((student) => scoreStudent(student).position);
@@ -636,7 +644,7 @@ function runSort(navigate = true) {
   } else {
     state.decisionLog = [
       `<strong>Translated ${state.students.length} responses.</strong> Blank answers contributed no evidence; familiarity levels contributed 0–3 points.`,
-      `<strong>Applied the fixed model.</strong> Every questionnaire signal counted equally at 1× using its built-in axis; ${hardwareSignals} signals lean hardware and ${softwareSignals} lean software.`,
+      `<strong>Counted evidence without strength weights.</strong> Every evidence point counted equally; ${hardwareSignals} questionnaire mappings point toward Hardware and ${softwareSignals} point toward Software.`,
       `<strong>Seeded the cohorts.</strong> Students furthest from the class midpoint were placed first so rare strengths were distributed early.`,
       `<strong>Tested local swaps.</strong> The hat made ${swaps} improving swap${swaps === 1 ? "" : "s"} across ${passes} pass${passes === 1 ? "" : "es"}, minimizing hardware, software, experience, and size gaps.`,
       `<strong>Stopped at ${finalBalance.score}/100.</strong> A higher score means the two cohorts have more similar skill totals—not that either cohort is “better.”`
@@ -916,7 +924,7 @@ function loadSampleRoster() {
 function restartSession() {
   const approved = window.confirm("Start a new session? This clears the local roster and starts with the fixed scoring model.");
   if (!approved) return;
-  state = { students: structuredClone(COURSE_STUDENTS), datasetLabel: COURSE_DATASET_LABEL, sortMode: "balanced", teams: null, decisionLog: [] };
+  state = { students: structuredClone(COURSE_STUDENTS), scoringModelVersion: SCORING_MODEL_VERSION, datasetLabel: COURSE_DATASET_LABEL, sortMode: "balanced", teams: null, decisionLog: [] };
   renderAll();
   showView("roster");
   showToast("New session started.");
@@ -948,6 +956,7 @@ function initials(name) { return String(name || "?").split(/\s+/).slice(0, 2).ma
 function bandColor(band) { return band === "hardware" ? "#ee713d" : band === "software" ? "#6d5bd0" : "#bed64b"; }
 function axisColor(axis) { return axis < -0.5 ? "#ee713d" : axis > 0.5 ? "#6d5bd0" : "#8fa630"; }
 function formatNumber(value, decimals = 2) { return Number(value).toFixed(decimals).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1"); }
+function directionLabel(direction) { return direction < 0 ? "Hardware direction −1" : direction > 0 ? "Software direction +1" : "Bridge direction 0"; }
 function activityLabel(key) { return ({ activityGithub: "Recent GitHub contribution", activityMicro: "Recent microcontroller prototype", activityCad: "Recent CAD drawing", activityWritingAi: "Recent writing-AI use", activityImageAi: "Recent image-AI use" })[key] || key; }
 function formatPosition(position) {
   if (position < 45) return `H ${Math.round(50 - position)}`;

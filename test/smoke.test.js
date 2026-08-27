@@ -20,15 +20,21 @@ const assertions = `
   const assert = (condition, message) => { if (!condition) throw new Error(message); };
 
   assert(SIGNAL_DEFINITIONS.every((signal) => !Object.hasOwn(signal, "influence")), "Questionnaire mappings should not contain weighting controls");
+  assert(SIGNAL_DEFINITIONS.every((signal) => [-1, 0, 1].includes(signal.axis)), "Questionnaire mappings should provide direction only, never strength");
+  assert(ACTIVITY_SIGNALS.every((signal) => Math.abs(signal.axis) === 1), "Activity mappings should provide equal-strength direction only");
   assert(!Object.hasOwn(state, "weights"), "New application state should not contain instructor weights");
+  assert(state.scoringModelVersion === SCORING_MODEL_VERSION, "New state should identify the equal-evidence scoring model");
 
   const initialState = state;
   const retainedStudent = sampleStudent("Retained", "", 0, { javascript: 4 });
-  state = { students: [retainedStudent], weights: { javascript: { axis: -3, influence: 3 } }, datasetLabel: "Legacy roster", sortMode: "split", teams: { A: [retainedStudent.id], B: [] }, decisionLog: ["old weighted sort"] };
+  state = { students: [retainedStudent], weights: { javascript: { axis: -3, influence: 3 } }, scoringModelVersion: SCORING_MODEL_VERSION, datasetLabel: "Legacy roster", sortMode: "split", teams: { A: [retainedStudent.id], B: [] }, decisionLog: ["old weighted sort"] };
   normalizeState();
   assert(!Object.hasOwn(state, "weights"), "Legacy instructor weights should be removed during state migration");
   assert(state.students.length === 1 && state.sortMode === "split", "Legacy migration should retain roster and strategy");
-  assert(state.teams === null && state.decisionLog.length === 0, "Legacy migration should invalidate teams and explanations created by the old weighted model");
+  assert(state.teams === null && state.decisionLog.length === 0 && state.scoringModelVersion === SCORING_MODEL_VERSION, "Legacy migration should invalidate old results and adopt the equal-evidence model");
+  state = { students: [retainedStudent], scoringModelVersion: 1, datasetLabel: "Previous model", sortMode: "balanced", teams: { A: [retainedStudent.id], B: [] }, decisionLog: ["old scoring model"] };
+  normalizeState();
+  assert(state.students.length === 1 && state.sortMode === "balanced" && state.teams === null && state.decisionLog.length === 0 && state.scoringModelVersion === SCORING_MODEL_VERSION, "A scoring-model version change should retain inputs while invalidating old results");
   state = initialState;
 
   const workedStudent = sampleStudent("Worked", "", 0, { javascript: 4 });
@@ -36,38 +42,62 @@ const assertions = `
   workedStudent.activities.activityMicro = 2;
   workedStudent.directPosition = 5;
   const worked = calculateScoreBreakdown(workedStudent);
-  assert(Math.abs(worked.signed - 23.1) < 0.000001, "Breakdown numerator should include equal-1× questionnaire, fixed activity, and manual contributions");
-  assert(Math.abs(worked.directionalEvidence - 30.9) < 0.000001, "Breakdown denominator should use fixed axes plus the manual denominator");
-  assert(Math.abs(worked.position - (50 + (23.1 / 30.9) * 50)) < 0.000001, "Breakdown should map its normalized score onto the 0–100 line");
-  assert(Math.abs(worked.confidence - (5 / 68) * 100) < 0.000001, "Confidence should treat every questionnaire row equally at 1×");
-  assert(worked.contributions.length === 4 && worked.contributions.every((item) => !item.context.includes("override")), "Worked rows should contain only fixed mappings and fixed signals");
+  assert(worked.signed === 4, "Breakdown numerator should sum raw equal-strength evidence points");
+  assert(worked.directionalEvidence === 8, "Breakdown denominator should sum raw directional evidence strength");
+  assert(worked.position === 75, "Breakdown should map its normalized score onto the 0–100 line");
+  assert(Math.abs(worked.confidence - (4 / 67) * 100) < 0.000001, "Confidence should count one point for a selected area");
+  assert(worked.contributions.length === 4 && worked.contributions.every((item) => !item.context.includes("override")), "Worked rows should contain only categorical directions and response evidence");
   assert(!Object.hasOwn(calculateScoreBreakdown(workedStudent, false), "contributions"), "Production scoring should skip worked-example allocations");
   assert(scoreStudent(workedStudent).position === worked.position, "Production scoring and worked arithmetic should share one calculation");
 
   const workedHtml = renderWorkedExampleModel(buildWorkedExampleModel(workedStudent));
-  assert(workedHtml.includes("23.1 ÷ 30.9") && workedHtml.includes("Manual direct position") && workedHtml.includes("Software"), "Worked example should expose exact arithmetic and final placement");
+  assert(workedHtml.includes("4 ÷ 8") && workedHtml.includes("Manual direct position") && workedHtml.includes("Software"), "Worked example should expose exact equal-evidence arithmetic and final placement");
   assert(renderWorkedExampleModel(buildWorkedExampleModel(null)).includes("Import a roster"), "Worked example should explain the empty-roster state");
   const blankHtml = renderWorkedExampleModel(buildWorkedExampleModel(sampleStudent("Blank", "", 0, {})));
   assert(blankHtml.includes("Blank and unfamiliar") && blankHtml.includes("every tool at 3 points"), "Worked example should explain zero evidence and the confidence denominator");
 
   const javascriptOnly = scoreStudent(sampleStudent("JavaScript", "", 0, { javascript: 4 }));
   const cadOnly = scoreStudent(sampleStudent("CAD", "", 0, { cad: 4 }));
+  const prototypingOnly = calculateScoreBreakdown(sampleStudent("Prototyping", "", 0, { prototyping: 4 }));
+  const microOnly = calculateScoreBreakdown(sampleStudent("Microcontrollers", "", 0, { microcontrollers: 4 }));
   const neutralOnly = scoreStudent(sampleStudent("Neutral", "", 0, { instruments: 4 }));
-  assert(javascriptOnly.position === 100 && javascriptOnly.band === "software", "Fixed JavaScript evidence should place toward Software");
-  assert(cadOnly.position === 0 && cadOnly.band === "hardware", "Fixed CAD evidence should place toward Hardware");
-  assert(neutralOnly.position === 50 && neutralOnly.confidence > 0, "A fixed neutral-axis response should build confidence without moving position");
+  assert(javascriptOnly.position === 100 && javascriptOnly.band === "software", "JavaScript evidence should place toward Software");
+  assert(cadOnly.position === 0 && cadOnly.band === "hardware", "CAD evidence should place toward Hardware");
+  assert(prototypingOnly.signed === microOnly.signed && prototypingOnly.directionalEvidence === microOnly.directionalEvidence, "Different Hardware tools should contribute equal strength for equal responses");
+  assert(neutralOnly.position === 50 && neutralOnly.confidence > 0, "A Bridge response should build confidence without moving position");
+  const opposed = scoreStudent(sampleStudent("Opposed", "", 0, { javascript: 4, microcontrollers: 4 }));
+  assert(opposed.position === 50, "Equal opposing responses should cancel regardless of tool identity");
   const technologyArea = sampleStudent("Technology", "", 0, {});
   technologyArea.areas = ["areaTechnology"];
-  assert(scoreStudent(technologyArea).position === 100, "Selected professional-area evidence should use its fixed built-in axis at 1×");
+  assert(scoreStudent(technologyArea).position === 100, "A selected Software area should contribute one Software evidence point");
+  const oneToolPoint = calculateScoreBreakdown(sampleStudent("One tool point", "", 0, { javascript: 2 }));
+  const oneAreaPoint = calculateScoreBreakdown(technologyArea);
+  const oneActivityStudent = sampleStudent("One activity point", "", 0, {});
+  oneActivityStudent.activities.activityGithub = 1;
+  const oneActivityPoint = calculateScoreBreakdown(oneActivityStudent);
+  const oneManualStudent = sampleStudent("One manual point", "", 0, {});
+  oneManualStudent.directPosition = 4;
+  const oneManualPoint = calculateScoreBreakdown(oneManualStudent);
+  [oneToolPoint, oneAreaPoint, oneActivityPoint, oneManualPoint].forEach((breakdown) => {
+    assert(breakdown.signed === 1 && breakdown.directionalEvidence === 1, "One Software evidence point should have the same effect across every source");
+  });
+  const centeredManualStudent = sampleStudent("Centered manual", "", 0, {});
+  centeredManualStudent.directPosition = 3;
+  const centeredManual = calculateScoreBreakdown(centeredManualStudent);
+  assert(centeredManual.signed === 0 && centeredManual.directionalEvidence === 0 && centeredManual.position === 50, "A centered manual response should add no directional strength");
+  const crossSourceOpposition = sampleStudent("Cross-source opposition", "", 0, { javascript: 2 });
+  crossSourceOpposition.activities.activityMicro = 1;
+  const crossSourceScore = calculateScoreBreakdown(crossSourceOpposition);
+  assert(crossSourceScore.signed === 0 && crossSourceScore.directionalEvidence === 2 && crossSourceScore.position === 50, "Equal opposing points from different sources should cancel at Bridge");
 
   const maya = scoreStudent(SAMPLE_STUDENTS.find((student) => student.name === "Maya"));
   const leo = scoreStudent(SAMPLE_STUDENTS.find((student) => student.name === "Leo"));
-  assert(maya.band === "hardware" && leo.band === "software", "Fixed mappings should retain recognizable hardware and software signals");
+  assert(maya.band === "hardware" && leo.band === "software", "Categorical mappings should retain recognizable hardware and software signals");
   const tiedEvidence = strongestEvidence(sampleStudent("Tie test", "", 0, { database: 3, api: 3 }));
   assert(tiedEvidence[0].label === "APIs", "Equal evidence should use a stable alphabetical tie-break");
 
   const balancedStatus = getScoringStatus();
-  assert(balancedStatus.title.includes("fixed scoring model") && balancedStatus.details.includes("Position + confidence balance"), "Page 2 should explain the fixed balanced model");
+  assert(balancedStatus.title.includes("responses alone") && balancedStatus.details.includes("Equal-strength evidence points") && balancedStatus.details.includes("Position + confidence balance"), "Page 2 should explain the equal-evidence balanced model");
   state.sortMode = "split";
   assert(getScoringStatus().details.includes("Ranked median split"), "Page 2 should explain the selected spectrum strategy");
 
@@ -81,8 +111,8 @@ const assertions = `
   runSort(false);
   assert(state.teams.A.length === 6 && state.teams.B.length === 5, "Balanced mode should split an odd roster 6/5");
   const balance = calculateBalance(state.teams.A.map(findStudent), state.teams.B.map(findStudent));
-  assert(balance.score >= 80, "Fixed-data balanced mode should create strongly balanced cohorts");
-  assert(state.decisionLog.some((entry) => entry.includes("Applied the fixed model")), "Balanced decision trail should disclose the fixed equal-1× model");
+  assert(balance.score >= 80, "Response-driven balanced mode should create strongly balanced cohorts");
+  assert(state.decisionLog.some((entry) => entry.includes("without strength weights")), "Balanced decision trail should disclose the equal-evidence model");
 
   state.sortMode = "split";
   runSort(false);
