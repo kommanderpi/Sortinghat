@@ -231,15 +231,17 @@ const assertions = `
   const balanceCardIndex = indexSource.indexOf('class="direction-balance-card"');
   const previewIndex = indexSource.indexOf('class="score-preview"');
   const formulaIndex = indexSource.indexOf('class="formula-card"');
-  assert(balanceCardIndex < previewIndex && previewIndex < formulaIndex, "Adjusted live preview should sit directly below the Page 2 balance slider");
+  const strategyIndex = indexSource.indexOf('class="sort-mode-card"');
+  assert(balanceCardIndex < previewIndex && previewIndex < strategyIndex && strategyIndex < formulaIndex, "Adjusted preview should follow the slider, with Cohort strategy above Scoring maths");
   assert(indexSource.includes("A student’s conversation with the Hat"), "Page 2 worked example should frame the score as a student conversation with the Hat");
   assert(indexSource.includes("Numerator N = Σ(evidence × direction × category balance) + m") && indexSource.includes("Denominator D = Σ(evidence × |direction| × category balance) + |m|") && indexSource.includes("The denominator measures total directional evidence, so it is never negative"), "The full scoring panel should clearly explain the complete numerator and denominator maths");
   assert(indexSource.includes("3 Hardware points + 1 Software point") && indexSource.includes("position 25") && indexSource.includes("signed Hardware evidence is greater"), "The scoring panel should derive a concrete position from actual directional evidence");
-  assert(stylesSource.includes('.model-controls .direction-balance-card, .model-controls .score-preview, .model-controls .formula-card, .model-controls .sort-mode-card { grid-column: 1 / -1; }'), "Formula and cohort-strategy panels should each span the full Page 2 width");
+  assert(stylesSource.includes('.model-controls { margin-bottom: 26px; display: grid; grid-template-columns: minmax(0, 1fr);'), "Page 2 controls should use one full-width column");
+  assert(stylesSource.includes('.model-controls .direction-balance-card, .model-controls .score-preview, .model-controls .formula-card, .model-controls .sort-mode-card { grid-column: 1 / -1; }'), "Every Page 2 panel should explicitly span the full controls row");
+  assert(indexSource.includes('styles.css?v=5') && indexSource.includes('app.js?v=5'), "Page assets should use the current cache version");
   const controlsIndex = indexSource.indexOf('class="model-controls"');
-  const strategyIndex = indexSource.indexOf('class="sort-mode-card"');
   const scoringStatusIndex = indexSource.indexOf('class="scoring-status"');
-  assert(controlsIndex < formulaIndex && formulaIndex < strategyIndex && strategyIndex < scoringStatusIndex, "Full-width formula and cohort-strategy panels should remain in the Page 2 controls flow");
+  assert(controlsIndex < strategyIndex && strategyIndex < formulaIndex && formulaIndex < scoringStatusIndex, "Full-width Cohort strategy and Scoring maths panels should remain in the requested Page 2 order");
 
   const headers = [
     "What is your preferred name?",

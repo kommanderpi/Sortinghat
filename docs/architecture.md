@@ -2,7 +2,7 @@
 
 ## Application shape
 
-Sorting Hat is a browser-only static application. [index.html](../index.html) contains the interface, [styles.css](../styles.css) contains presentation, and [app.js](../app.js) owns browser state, CSV parsing, scoring, sorting, rendering, and CSV export. It has no server or build system.
+Sorting Hat is a browser-only static application. [index.html](../index.html) contains the interface, [styles.css](../styles.css) contains presentation, and [app.js](../app.js) owns browser state, CSV parsing, scoring, sorting, rendering, and CSV export. It has no server or build system. The document currently requests its browser assets as `styles.css?v=5` and `app.js?v=5`; the query value is a static cache version, not a scoring setting.
 
 ```mermaid
 flowchart LR
@@ -96,7 +96,7 @@ The question-balance slider does not modify either confidence total. A Bridge to
 
 ### Page 2 preview and worked example
 
-The Scoring page places the global balance control first, then its horizontal adjusted live preview, then a full-width scoring-maths panel and a separate full-width cohort-strategy panel. The preview’s left-to-right spectrum is labelled Hardware `0`, Bridge `50`, and Software `100`; it also shows the class-center and average-confidence summaries. The balance control shows the current Hardware / Software shares, the two resulting point multipliers, and the marked Questions-as-is position. The range input has an accessible label and value text; the marker is also exposed with its ratio and `1×` meaning.
+The Scoring page uses a single-column control flow: the global balance control, its horizontal adjusted live preview, the full-width Cohort strategy panel, and then the full-width Scoring maths panel. The preview’s left-to-right spectrum is labelled Hardware `0`, Bridge `50`, and Software `100`; it also shows the class-center and average-confidence summaries. The balance control shows the current Hardware / Software shares, the two resulting point multipliers, and the marked Questions-as-is position. The range input has an accessible label and value text; the marker is also exposed with its ratio and `1×` meaning. This order is presentational: it does not alter scoring or cohort-strategy behavior.
 
 Moving the slider immediately updates the Page 2 preview, scoring status, worked example, and results display. It does not rerender the Page 1 roster, whose signal remains raw questions-as-is. The change clears existing teams and the decision log because those were produced with a different directional balance, then persists the updated value. The status card and generated decision log disclose the active Hardware and Software multipliers.
 

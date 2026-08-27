@@ -320,7 +320,7 @@ main { min-height: calc(100vh - 140px); }
 .rotation-module strong { font-size: 11px; }
 .rotation-module--physical > i { color: #8a3e1f; background: var(--orange-soft); }
 .rotation-module--computational > i { color: white; background: var(--purple); }
-.model-controls { margin-bottom: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
+.model-controls { margin-bottom: 26px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .model-controls .formula-card, .model-controls .sort-mode-card { margin: 0; }
 .model-controls .direction-balance-card, .model-controls .score-preview, .model-controls .formula-card, .model-controls .sort-mode-card { grid-column: 1 / -1; }
 .model-controls .sort-mode-card { grid-template-columns: 1fr 1fr; align-content: center; }

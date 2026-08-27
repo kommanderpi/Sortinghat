@@ -9,7 +9,7 @@
     />
     <title>Sorting Hat — Technical Design Foundations</title>
     <link rel="icon" type="image/png" href="cybernetic-sorting-hat-front-transparent.png" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=5" />
   </head>
   <body class="is-landing">
     <section class="landing-page" id="landingPage" aria-label="Sorting Hat welcome">
@@ -222,6 +222,17 @@
                 </button>
               </div>
             </aside>
+            <fieldset class="sort-mode-card">
+              <legend>Cohort strategy</legend>
+              <label>
+                <input type="radio" name="sortMode" value="balanced" checked />
+                <span><strong>Balanced cohorts</strong><small>Give both cohorts a comparable mix of skill signals.</small></span>
+              </label>
+              <label>
+                <input type="radio" name="sortMode" value="split" />
+                <span><strong>Skill-spectrum split</strong><small>Rank the room from hardware to software signals, then divide it approximately 50/50.</small></span>
+              </label>
+            </fieldset>
             <section class="formula-card" aria-labelledby="formulaTitle">
               <button id="formulaToggle" type="button" aria-expanded="true">
                 <span class="formula-title"><i aria-hidden="true">ƒ</i><span><small>SCORING MATHS</small><strong id="formulaTitle">How responses become a position</strong></span></span><span aria-hidden="true">⌃</span>
@@ -250,17 +261,6 @@
                 <p class="formula-note">Manual choice is optional. Choices 1–2 add a negative Hardware pull, choice 3 adds 0, and choices 4–5 add a positive Software pull. Manual distance is not changed by the question-balance slider and is listed separately in the student conversation below.</p>
               </div>
             </section>
-            <fieldset class="sort-mode-card">
-              <legend>Cohort strategy</legend>
-              <label>
-                <input type="radio" name="sortMode" value="balanced" checked />
-                <span><strong>Balanced cohorts</strong><small>Give both cohorts a comparable mix of skill signals.</small></span>
-              </label>
-              <label>
-                <input type="radio" name="sortMode" value="split" />
-                <span><strong>Skill-spectrum split</strong><small>Rank the room from hardware to software signals, then divide it approximately 50/50.</small></span>
-              </label>
-            </fieldset>
           </div>
 
           <section class="scoring-status" id="scoringStatus" aria-live="polite"></section>
@@ -407,6 +407,6 @@
     </dialog>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js"></script>
+    <script src="app.js?v=5"></script>
   </body>
 </html>
