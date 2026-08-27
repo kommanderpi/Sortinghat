@@ -327,19 +327,19 @@ main { min-height: calc(100vh - 140px); }
 .model-controls .sort-mode-card legend { grid-column: 1 / -1; }
 
 .scoring-status { margin: -10px 0 26px; padding: 15px 17px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; border: 1px solid #b8c87b; border-radius: 13px; background: #f1f5df; }
-.scoring-status.is-off { border-color: #e5ad79; background: #fff1e2; box-shadow: inset 4px 0 var(--orange); }
+.scoring-status.is-baseline { border-color: #aab2d5; background: #f1f2fa; box-shadow: inset 4px 0 var(--purple); }
 .scoring-status.is-neutral { border-color: #d8c06c; background: #fff9dd; box-shadow: inset 4px 0 #c49b19; }
 .scoring-status-icon { width: 34px; height: 34px; display: grid; place-items: center; color: white; background: #82982d; border-radius: 50%; font-weight: 900; }
-.scoring-status.is-off .scoring-status-icon { background: var(--orange); }
+.scoring-status.is-baseline .scoring-status-icon { background: var(--purple); }
 .scoring-status.is-neutral .scoring-status-icon { background: #b88e0d; }
 .scoring-status-copy > p:first-child { margin: 0 0 3px; color: #667821; font-size: 8px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
-.scoring-status.is-off .scoring-status-copy > p:first-child { color: #a14e28; }
+.scoring-status.is-baseline .scoring-status-copy > p:first-child { color: #514592; }
 .scoring-status.is-neutral .scoring-status-copy > p:first-child { color: #896800; }
 .scoring-status-copy h3 { margin: 0; font-family: Georgia, serif; font-size: 17px; }
 .scoring-status-copy > p:last-child { max-width: 760px; margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .scoring-status-details { max-width: 275px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
 .scoring-status-details span { padding: 5px 7px; border: 1px solid rgba(102,120,33,.25); border-radius: 999px; color: #526118; background: rgba(255,255,255,.55); font-size: 8px; font-weight: 800; }
-.scoring-status.is-off .scoring-status-details span { border-color: rgba(161,78,40,.25); color: #89401e; }
+.scoring-status.is-baseline .scoring-status-details span { border-color: rgba(81,69,146,.25); color: #514592; }
 .scoring-status.is-neutral .scoring-status-details span { border-color: rgba(137,104,0,.25); color: #745800; }
 
 .worked-example { margin: 0 0 26px; border: 1px solid #b8abd9; border-radius: 14px; overflow: hidden; background: white; box-shadow: inset 4px 0 var(--purple); }
@@ -397,6 +397,7 @@ main { min-height: calc(100vh - 140px); }
 .axis-control { position: relative; padding: 18px 0 12px; }
 .axis-control::before { content: ""; position: absolute; top: 27px; left: 0; right: 0; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--orange), #dfd9cd 50%, var(--purple)); }
 .axis-control input { position: relative; width: 100%; height: 18px; margin: 0; appearance: none; background: transparent; z-index: 1; cursor: pointer; }
+.axis-control input:disabled { cursor: default; opacity: .72; }
 .axis-control input::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border: 3px solid white; border-radius: 50%; background: var(--thumb, var(--ink)); box-shadow: 0 0 0 1px rgba(27,27,24,.25), 0 2px 5px rgba(27,27,24,.2); }
 .axis-control .ticks { display: flex; justify-content: space-between; margin-top: 3px; color: #9c978c; font-size: 8px; }
 .influence-control { text-align: right; }

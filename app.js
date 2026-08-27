@@ -183,11 +183,16 @@ function renderAll() {
 
 function normalizeState() {
   state.students ||= [];
-  state.weights ||= structuredClone(DEFAULT_WEIGHTS);
+  state.weights ||= {};
   state.datasetLabel ||= "Local roster";
   state.sortMode ||= "balanced";
   SIGNAL_DEFINITIONS.forEach((signal) => {
-    state.weights[signal.key] ||= { ...DEFAULT_WEIGHTS[signal.key] };
+    const setting = state.weights[signal.key] || {};
+    const rawAxis = Number(setting.axis);
+    const rawInfluence = Number(setting.influence);
+    const axis = Number.isFinite(rawAxis) ? Math.round(clamp(rawAxis, -3, 3) * 10) / 10 : signal.axis;
+    const influence = [0, 1, 2, 3].includes(rawInfluence) ? rawInfluence : 0;
+    state.weights[signal.key] = { axis, influence };
   });
 }
 
@@ -226,15 +231,17 @@ function rosterRow(student) {
 function renderWeights() {
   const renderRows = (signals) => signals.map((signal) => {
     const setting = state.weights[signal.key];
+    const isBaseline = setting.influence === 0;
+    const displayedAxis = isBaseline ? signal.axis : setting.axis;
     return `<div class="weight-row" data-key="${signal.key}">
-      <div class="weight-name"><strong>${escapeHtml(signal.label)}</strong><small>${escapeHtml(signal.category)}</small></div>
-      <div class="axis-control" style="--thumb:${axisColor(setting.axis)}">
-        <input aria-label="${escapeHtml(signal.label)} position" data-setting="axis" type="range" min="-3" max="3" step="0.1" value="${setting.axis}" />
+      <div class="weight-name"><strong>${escapeHtml(signal.label)}</strong><small>${escapeHtml(signal.category)}${isBaseline ? " · built-in position" : ""}</small></div>
+      <div class="axis-control" style="--thumb:${axisColor(displayedAxis)}">
+        <input aria-label="${escapeHtml(signal.label)} ${isBaseline ? "built-in baseline" : "instructor"} position" data-setting="axis" type="range" min="-3" max="3" step="0.1" value="${displayedAxis}" ${isBaseline ? "disabled" : ""} />
         <div class="ticks"><span>−3</span><span>0</span><span>+3</span></div>
       </div>
       <div class="influence-control">
         <select aria-label="${escapeHtml(signal.label)} influence" data-setting="influence">
-          <option value="0" ${setting.influence === 0 ? "selected" : ""}>Off</option>
+          <option value="0" ${setting.influence === 0 ? "selected" : ""}>Baseline · no adjustment</option>
           <option value="1" ${setting.influence === 1 ? "selected" : ""}>1× light</option>
           <option value="2" ${setting.influence === 2 ? "selected" : ""}>2× medium</option>
           <option value="3" ${setting.influence === 3 ? "selected" : ""}>3× strong</option>
@@ -254,78 +261,51 @@ function renderPreview() {
   const mean = average(scored.map((item) => item.position));
   const confidence = average(scored.map((item) => item.confidence));
   els.classCenter.textContent = scored.length ? formatPosition(mean) : "—";
-  const activeInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].influence > 0).length;
-  els.classConfidence.textContent = !scored.length ? "—" : activeInstructorSignals ? `${Math.round(confidence)}%` : "N/A";
+  els.classConfidence.textContent = scored.length ? `${Math.round(confidence)}%` : "—";
 }
 
 function getScoringStatus() {
-  const activeInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].influence > 0).length;
-  const directionalInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].influence > 0 && Math.abs(state.weights[signal.key].axis) > 0.0001).length;
+  const activeInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => Number(state.weights[signal.key]?.influence) > 0).length;
+  const baselineSignals = SIGNAL_DEFINITIONS.length - activeInstructorSignals;
+  const directionalInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => Number(state.weights[signal.key]?.influence) > 0 && Math.abs(resolveEffectiveSetting(signal, state.weights).axis) > 0.0001).length;
   const fixedEvidenceStudents = state.students.filter((student) => (
     student.directPosition != null || ACTIVITY_SIGNALS.some((signal) => Number(student.activities?.[signal.key]) > 0)
   )).length;
   const allOff = activeInstructorSignals === 0;
   const balanced = state.sortMode === "balanced";
-  const scores = allOff ? state.students.map(scoreStudent) : [];
-  const varies = (key) => scores.some((score) => Math.abs(score[key] - (scores[0]?.[key] ?? score[key])) > 0.0001);
-  const fixedEvidenceSeparates = varies("position") || (balanced && (varies("hardware") || varies("software")));
 
-  if (!allOff && directionalInstructorSignals === 0) {
+  if (allOff) {
+    return {
+      allOff,
+      neutral: false,
+      title: "No instructor adjustments—baseline questionnaire mapping is active",
+      description: balanced
+        ? "Student tool and professional-area answers use their built-in hardware–software direction at 1×. Recent activities and manual direct-position signals keep their fixed rules; the Hat balances position, confidence, experience, and cohort size."
+        : "Student tool and professional-area answers use their built-in hardware–software direction at 1×. Recent activities and manual direct-position signals keep their fixed rules before the ranked 50/50 split.",
+      details: [`${SIGNAL_DEFINITIONS.length} baseline mappings`, `${fixedEvidenceStudents} students with fixed evidence`, balanced ? "Position + confidence balance" : "Ranked median split"]
+    };
+  }
+
+  if (directionalInstructorSignals === 0) {
     return {
       allOff,
       neutral: true,
-      title: "Instructor weights are neutral—confidence only",
+      title: "Enabled instructor adjustments are neutral—confidence only",
       description: balanced
-        ? "Every active instructor axis is 0, so tool and professional-area answers build response confidence without moving students along the line. Fixed activities and manual direct-position signals can still position students; the Hat also balances confidence, experience, and cohort size."
-        : "Every active instructor axis is 0, so tool and professional-area answers build response confidence without moving students along the line. Fixed activities and manual direct-position signals set position; confidence and name break position ties before the 50/50 split.",
-      details: [`${activeInstructorSignals} confidence weights`, "0 directional weights", balanced ? "Confidence + experience balance" : "Confidence breaks position ties"]
-    };
-  }
-
-  if (!allOff) {
-    return {
-      allOff,
-      neutral: false,
-      title: `${activeInstructorSignals} of ${SIGNAL_DEFINITIONS.length} instructor weights active`,
-      description: balanced
-        ? "Directional tool and professional-area weights shape position; every active weight builds response confidence. Neutral-axis weights add confidence without pulling either way. The Hat balances those measures with fixed activity evidence, manual direct-position signals, experience, and cohort size."
-        : "Directional tool and professional-area weights shape position; every active weight builds response confidence. Neutral-axis weights add confidence without pulling either way. The Hat ranks by position, then uses confidence and name to break ties before the 50/50 split.",
-      details: [`${activeInstructorSignals} weighted signals`, `${fixedEvidenceStudents} students with fixed evidence`, balanced ? "Position + confidence balance" : "Confidence breaks position ties"]
-    };
-  }
-
-  if (fixedEvidenceStudents && fixedEvidenceSeparates) {
-    return {
-      allOff,
-      neutral: false,
-      title: "Instructor weights are off—fixed evidence still separates the room",
-      description: balanced
-        ? "Tool familiarity and professional areas are ignored. Recent activity responses and manual direct-position signals can still differentiate spectrum positions or hardware/software evidence; the Hat balances those differences with professional experience and cohort size."
-        : "Tool familiarity and professional areas are ignored. The Hat ranks students only by recent activity responses and manual direct-position signals, then divides that ranking approximately 50/50.",
-      details: ["0 weighted signals", `${fixedEvidenceStudents} students with fixed evidence`, balanced ? "Experience + size still balance" : "Ranked median split"]
-    };
-  }
-
-  if (fixedEvidenceStudents) {
-    return {
-      allOff,
-      neutral: false,
-      title: "Instructor weights are off—fixed evidence does not separate this roster",
-      description: balanced
-        ? "Recent activity responses or manual direct-position signals remain, but they produce the same sorting evidence across this roster. The Hat therefore builds approximately equal cohorts using professional experience, with names breaking exact ties."
-        : "Recent activity responses or manual direct-position signals remain, but they produce the same position across this roster. The Hat therefore creates an approximately 50/50 alphabetical split.",
-      details: ["0 weighted signals", `${fixedEvidenceStudents} students with fixed evidence`, balanced ? "Experience + size decide" : "Alphabetical tie-break"]
+        ? `The ${activeInstructorSignals} enabled overrides use axis 0, so they build confidence without pulling position. ${baselineSignals ? `The other ${baselineSignals} questionnaire rows retain their built-in direction at 1×. ` : ""}Fixed activities and manual signals are unchanged; the Hat also balances experience and cohort size.`
+        : `The ${activeInstructorSignals} enabled overrides use axis 0, so they build confidence without pulling position. ${baselineSignals ? `The other ${baselineSignals} questionnaire rows retain their built-in direction at 1×. ` : ""}Fixed activities and manual signals are unchanged before the ranked split.`,
+      details: [`${activeInstructorSignals} neutral overrides`, `${baselineSignals} baseline mappings`, balanced ? "Position + confidence balance" : "Ranked median split"]
     };
   }
 
   return {
     allOff,
     neutral: false,
-    title: "Instructor weights are off—everyone ties at Bridge",
+    title: `${activeInstructorSignals} instructor adjustments, ${baselineSignals} baseline mappings`,
     description: balanced
-      ? "No positional evidence remains, so every student sits at 50. The Hat builds approximately equal cohorts using professional experience, with names breaking exact ties."
-      : "No positional evidence remains, so every student sits at 50. The Hat creates an approximately 50/50 split, with names breaking the tie alphabetically.",
-    details: ["0 weighted signals", "No fixed position evidence", balanced ? "Experience + size only" : "Alphabetical tie-break"]
+      ? "Enabled instructor settings override their questionnaire rows; every row without an adjustment falls back to its built-in direction at 1×. Neutral overrides build confidence only. Fixed activities and manual signals are unchanged; the Hat also balances experience and cohort size."
+      : "Enabled instructor settings override their questionnaire rows; every row without an adjustment falls back to its built-in direction at 1×. Neutral overrides build confidence only, and fixed activities and manual signals are unchanged before the ranked split.",
+    details: [`${directionalInstructorSignals} directional overrides`, `${baselineSignals} baseline mappings`, balanced ? "Position + confidence balance" : "Ranked median split"]
   };
 }
 
@@ -334,9 +314,9 @@ function renderScoringStatus() {
   const signature = JSON.stringify(status);
   if (els.scoringStatus.dataset.signature === signature) return;
   els.scoringStatus.dataset.signature = signature;
-  els.scoringStatus.classList.toggle("is-off", status.allOff);
+  els.scoringStatus.classList.toggle("is-baseline", status.allOff);
   els.scoringStatus.classList.toggle("is-neutral", status.neutral);
-  els.scoringStatus.innerHTML = `<span class="scoring-status-icon" aria-hidden="true">${status.allOff ? "!" : status.neutral ? "↔" : "✓"}</span><div class="scoring-status-copy"><p>What drives this sort</p><h3>${escapeHtml(status.title)}</h3><p>${escapeHtml(status.description)}</p></div><div class="scoring-status-details">${status.details.map((detail) => `<span>${escapeHtml(detail)}</span>`).join("")}</div>`;
+  els.scoringStatus.innerHTML = `<span class="scoring-status-icon" aria-hidden="true">${status.allOff ? "↺" : status.neutral ? "↔" : "✓"}</span><div class="scoring-status-copy"><p>What drives this sort</p><h3>${escapeHtml(status.title)}</h3><p>${escapeHtml(status.description)}</p></div><div class="scoring-status-details">${status.details.map((detail) => `<span>${escapeHtml(detail)}</span>`).join("")}</div>`;
 }
 
 function renderWorkedExample() {
@@ -357,18 +337,13 @@ function buildWorkedExampleModel(student, weights) {
     studentName: student.name,
     ...breakdown,
     noDirectionalEvidence: breakdown.directionalEvidence === 0,
-    confidenceUnavailable: breakdown.possibleEvidence === 0,
-    allInstructorWeightsOff: SIGNAL_DEFINITIONS.every((signal) => !weights[signal.key] || weights[signal.key].influence === 0)
+    confidenceUnavailable: breakdown.possibleEvidence === 0
   };
 }
 
 function renderWorkedExampleModel(model) {
   if (model.empty) return `<p class="worked-example-empty">${escapeHtml(model.message)}</p>`;
-  const noContributionMessage = model.allInstructorWeightsOff
-    ? "Instructor-controlled answers are ignored because all instructor weights are off. This student has no fixed activity or manual direct-position evidence."
-    : model.confidenceUnavailable
-      ? "None of this student's answers match an active instructor-controlled signal, and no fixed activity or manual direct-position evidence applies."
-      : "This student has no evidence points to show. Blank and unfamiliar tool responses contribute 0 evidence.";
+  const noContributionMessage = "This student has no evidence points to show. Blank and unfamiliar tool responses contribute 0 evidence; unselected professional areas contribute none.";
   const rows = model.contributions.length ? model.contributions.map((item) => `<tr>
     <th scope="row"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.context)}</small></th>
     <td><code>${escapeHtml(item.signedFormula)}</code></td>
@@ -376,7 +351,7 @@ function renderWorkedExampleModel(model) {
     <td>${formatNumber(item.directional)}</td>
   </tr>`).join("") : `<tr><td colspan="4" class="worked-example-empty">${escapeHtml(noContributionMessage)}</td></tr>`;
   const confidenceText = model.confidenceUnavailable
-    ? model.allInstructorWeightsOff ? "N/A — all instructor-controlled signals are off" : "N/A — no applicable active instructor evidence for this student"
+    ? "N/A — no questionnaire evidence is available for this student"
     : `${formatNumber(model.allEvidence)} ÷ ${formatNumber(model.possibleEvidence)} × 100 = ${Math.round(model.confidence)}%`;
   const positionMath = model.noDirectionalEvidence
     ? "No directional denominator → normalized 0 → 50 + (0 × 50) = 50"
@@ -387,7 +362,7 @@ function renderWorkedExampleModel(model) {
     <div class="worked-example-result">
       <div><small>Position arithmetic</small><code>${escapeHtml(positionMath)}</code></div>
       <div><small>Final placement</small><strong>${formatNumber(model.position)} / 100 · ${capitalize(model.band)}</strong><span>${escapeHtml(formatPosition(model.position))}</span></div>
-      <div><small>Response confidence</small><code>${escapeHtml(confidenceText)}</code>${model.confidenceUnavailable ? "" : "<span>Possible evidence includes every active tool at 3 × influence—even when blank or unfamiliar—and each selected area at 2 × influence.</span>"}</div>
+      <div><small>Response confidence</small><code>${escapeHtml(confidenceText)}</code>${model.confidenceUnavailable ? "" : "<span>Possible evidence includes every tool at 3 × its effective influence—even when blank or unfamiliar—and each selected area at 2 × its effective influence.</span>"}</div>
     </div>`;
 }
 
@@ -478,7 +453,7 @@ function renderSortMap(cohortA, cohortB) {
     els.sortMapCut.hidden = true;
     els.sortMapStudents.innerHTML = "";
     els.sortMapChart.style.setProperty("--chart-height", "250px");
-    els.sortMapNote.textContent = "Each name will be positioned by its complete weighted questionnaire score.";
+    els.sortMapNote.textContent = "Each name will be positioned by its effective questionnaire score: instructor override or built-in baseline per signal.";
     return;
   }
 
@@ -511,11 +486,11 @@ function renderSortMap(cohortA, cohortB) {
     els.sortMapSummary.textContent = separateCut
       ? `The class median is ${median.toFixed(1)}; the cohort cut at ${cohortCut.toFixed(1)} falls between the two ranked groups.`
       : `The class median and cohort cut meet at ${median.toFixed(1)}. Manual moves remain visible across the line.`;
-    els.sortMapNote.textContent = `Names are positioned by complete weighted score. The ranked cut creates approximately equal cohorts—even when the class has more signals on one side.`;
+    els.sortMapNote.textContent = `Names are positioned by effective questionnaire score. The ranked cut creates approximately equal cohorts—even when the class has more signals on one side.`;
   } else {
     els.sortMapTitle.textContent = "How the cohorts overlap";
     els.sortMapSummary.textContent = `The class median is ${median.toFixed(1)}. A balanced result mixes both cohort colors across the skill-signal spectrum.`;
-    els.sortMapNote.textContent = "Names are positioned by complete weighted score. Color shows cohort assignment, not a student's discipline or course path.";
+    els.sortMapNote.textContent = "Names are positioned by effective questionnaire score. Color shows cohort assignment, not a student's discipline or course path.";
   }
 }
 
@@ -567,7 +542,7 @@ function renderTeam(name, students) {
 function renderDecisionLog() {
   const fallback = [
     "<strong>Translate:</strong> familiarity answers become 0–3 evidence points.",
-    "<strong>Position:</strong> each answer is multiplied by its visible axis position and influence.",
+    "<strong>Position:</strong> each answer uses its enabled instructor override, or its built-in axis at 1× when no adjustment is set.",
     "<strong>Balance:</strong> the hat searches for equal-size cohorts with similar hardware, software, and experience totals."
   ];
   els.decisionLog.innerHTML = (state.decisionLog.length ? state.decisionLog : fallback).map((entry) => `<li>${entry}</li>`).join("");
@@ -588,6 +563,20 @@ function handleSortModeChange(event) {
   saveState();
 }
 
+function resolveEffectiveSetting(definition, weights) {
+  const instructorSetting = weights?.[definition.key];
+  const instructorInfluence = Number(instructorSetting?.influence);
+  if (!(instructorInfluence > 0)) {
+    return { axis: definition.axis, influence: 1, isBaseline: true };
+  }
+  const instructorAxis = Number(instructorSetting.axis);
+  return {
+    axis: Number.isFinite(instructorAxis) ? instructorAxis : definition.axis,
+    influence: instructorInfluence,
+    isBaseline: false
+  };
+}
+
 function calculateScoreBreakdown(student, weights, includeContributions = true) {
   let signed = 0;
   let directionalEvidence = 0;
@@ -597,10 +586,9 @@ function calculateScoreBreakdown(student, weights, includeContributions = true) 
   let software = 0;
   const contributions = includeContributions ? [] : null;
   TOOL_DEFINITIONS.forEach((tool) => {
-    const setting = weights[tool.key];
+    const setting = resolveEffectiveSetting(tool, weights);
     const response = clamp(Number(student.skills?.[tool.key]) || 0, 0, 4);
     const evidence = response ? response - 1 : 0;
-    if (!setting || setting.influence === 0) return;
     const signedContribution = evidence * setting.axis * setting.influence;
     const directionalContribution = evidence * Math.abs(setting.axis) * setting.influence;
     signed += signedContribution;
@@ -609,12 +597,11 @@ function calculateScoreBreakdown(student, weights, includeContributions = true) 
     possibleEvidence += 3 * setting.influence;
     if (setting.axis < 0) hardware += evidence * Math.abs(setting.axis) * setting.influence;
     if (setting.axis > 0) software += evidence * setting.axis * setting.influence;
-    if (includeContributions && evidence) contributions.push({ label: tool.label, context: `Tool response ${response} → evidence ${evidence}; ${setting.influence}× influence${setting.axis === 0 ? "; neutral axis adds confidence only" : ""}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(setting.axis)} × ${formatNumber(setting.influence)}`, signed: signedContribution, directional: directionalContribution });
+    if (includeContributions && evidence) contributions.push({ label: tool.label, context: `Tool response ${response} → evidence ${evidence}; ${setting.isBaseline ? "baseline mapping at 1×" : `instructor override at ${formatNumber(setting.influence)}×`}${setting.axis === 0 ? "; neutral axis adds confidence only" : ""}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(setting.axis)} × ${formatNumber(setting.influence)}`, signed: signedContribution, directional: directionalContribution });
   });
   AREA_DEFINITIONS.forEach((area) => {
     if (!student.areas?.includes(area.key)) return;
-    const setting = weights[area.key];
-    if (!setting || setting.influence === 0) return;
+    const setting = resolveEffectiveSetting(area, weights);
     const evidence = 2;
     const signedContribution = evidence * setting.axis * setting.influence;
     const directionalContribution = evidence * Math.abs(setting.axis) * setting.influence;
@@ -624,7 +611,7 @@ function calculateScoreBreakdown(student, weights, includeContributions = true) 
     possibleEvidence += 2 * setting.influence;
     if (setting.axis < 0) hardware += evidence * Math.abs(setting.axis) * setting.influence;
     if (setting.axis > 0) software += evidence * setting.axis * setting.influence;
-    if (includeContributions) contributions.push({ label: area.label, context: `Selected area → fixed evidence 2; ${setting.influence}× influence${setting.axis === 0 ? "; neutral axis adds confidence only" : ""}`, signedFormula: `2 × ${formatNumber(setting.axis)} × ${formatNumber(setting.influence)}`, signed: signedContribution, directional: directionalContribution });
+    if (includeContributions) contributions.push({ label: area.label, context: `Selected area → fixed evidence 2; ${setting.isBaseline ? "baseline mapping at 1×" : `instructor override at ${formatNumber(setting.influence)}×`}${setting.axis === 0 ? "; neutral axis adds confidence only" : ""}`, signedFormula: `2 × ${formatNumber(setting.axis)} × ${formatNumber(setting.influence)}`, signed: signedContribution, directional: directionalContribution });
   });
   ACTIVITY_SIGNALS.forEach((signal) => {
     const evidence = clamp(Number(student.activities?.[signal.key]) || 0, 0, 3);
@@ -659,12 +646,12 @@ function strongestEvidence(student) {
   const toolEvidence = TOOL_DEFINITIONS.map((tool) => ({
     label: tool.label.replace(/ \(.+\)/, ""),
     value: Math.max(0, (Number(student.skills?.[tool.key]) || 0) - 1),
-    impact: Math.max(0, (Number(student.skills?.[tool.key]) || 0) - 1) * (state.weights[tool.key]?.influence || 0)
+    impact: Math.max(0, (Number(student.skills?.[tool.key]) || 0) - 1) * resolveEffectiveSetting(tool, state.weights).influence
   }));
   const areaEvidence = AREA_DEFINITIONS.filter((area) => student.areas?.includes(area.key)).map((area) => ({
     label: area.label,
     value: 2,
-    impact: 2 * (state.weights[area.key]?.influence || 0)
+    impact: 2 * resolveEffectiveSetting(area, state.weights).influence
   }));
   return [...toolEvidence, ...areaEvidence]
     .filter((item) => item.value > 0)
@@ -725,15 +712,17 @@ function runSort(navigate = true) {
   }
   state.teams = { A: A.map((student) => student.id), B: B.map((student) => student.id) };
   const finalBalance = calculateBalance(A, B);
-  const hardwareTools = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].axis < -1 && state.weights[signal.key].influence > 0).length;
-  const softwareTools = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].axis > 1 && state.weights[signal.key].influence > 0).length;
+  const hardwareTools = SIGNAL_DEFINITIONS.filter((signal) => resolveEffectiveSetting(signal, state.weights).axis < -1).length;
+  const softwareTools = SIGNAL_DEFINITIONS.filter((signal) => resolveEffectiveSetting(signal, state.weights).axis > 1).length;
+  const instructorAdjustments = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].influence > 0).length;
+  const baselineMappings = SIGNAL_DEFINITIONS.length - instructorAdjustments;
   if (state.sortMode === "split") {
     const aPositions = A.map((student) => scoreStudent(student).position);
     const bPositions = B.map((student) => scoreStudent(student).position);
     const cutPoint = (Math.max(...aPositions) + Math.min(...bPositions)) / 2;
     state.decisionLog = [
       `<strong>Translated ${state.students.length} responses.</strong> Each student received one continuous Hardware ⇄ Software position.`,
-      `<strong>Ranked the whole room.</strong> Students were ordered from the lowest to highest weighted position; fixed Hardware, Bridge, and Software labels did not control the order.`,
+      `<strong>Ranked the whole room.</strong> Students were ordered from the lowest to highest effective position; fixed Hardware, Bridge, and Software labels did not control the order.`,
       `<strong>Cut between the ranked groups at ${cutPoint.toFixed(1)}.</strong> The lower ${A.length} positions became ${COHORT_NAMES.A} and the upper ${B.length} became ${COHORT_NAMES.B}.`,
       `<strong>Guaranteed an approximate 50/50 split.</strong> This median method stays ${A.length}/${B.length} even when far more students cross the absolute Software signal threshold.`,
       `<strong>Kept course pathways separate from skill labels.</strong> Cohort names do not prescribe a discipline; both cohorts complete Physical Computing and Computational Design.`
@@ -741,7 +730,7 @@ function runSort(navigate = true) {
   } else {
     state.decisionLog = [
       `<strong>Translated ${state.students.length} responses.</strong> Blank answers contributed no evidence; familiarity levels contributed 0–3 points.`,
-      `<strong>Applied your model.</strong> Tool familiarity and professional/academic areas were combined: ${hardwareTools} signals lean hardware and ${softwareTools} lean software.`,
+      `<strong>Applied the effective model.</strong> ${instructorAdjustments} instructor adjustment${instructorAdjustments === 1 ? "" : "s"} and ${baselineMappings} built-in baseline mapping${baselineMappings === 1 ? "" : "s"} were used; ${hardwareTools} signals lean hardware and ${softwareTools} lean software.`,
       `<strong>Seeded the cohorts.</strong> Students furthest from the class midpoint were placed first so rare strengths were distributed early.`,
       `<strong>Tested local swaps.</strong> The hat made ${swaps} improving swap${swaps === 1 ? "" : "s"} across ${passes} pass${passes === 1 ? "" : "es"}, minimizing hardware, software, experience, and size gaps.`,
       `<strong>Stopped at ${finalBalance.score}/100.</strong> A higher score means the two cohorts have more similar skill totals—not that either cohort is “better.”`
@@ -790,7 +779,15 @@ function handleWeightChange(event) {
   const key = row.dataset.key;
   const setting = event.target.dataset.setting;
   state.weights[key][setting] = Number(event.target.value);
-  if (setting === "axis") row.querySelector(".axis-control").style.setProperty("--thumb", axisColor(Number(event.target.value)));
+  const signal = SIGNAL_DEFINITIONS.find((item) => item.key === key);
+  const axisInput = row.querySelector('.axis-control input[data-setting="axis"]');
+  const baseline = state.weights[key].influence === 0;
+  const displayedAxis = baseline ? signal.axis : state.weights[key].axis;
+  axisInput.disabled = baseline;
+  axisInput.value = displayedAxis;
+  axisInput.setAttribute("aria-label", `${signal.label} ${baseline ? "built-in baseline" : "instructor"} position`);
+  row.querySelector(".weight-name small").textContent = `${signal.category}${baseline ? " · built-in position" : ""}`;
+  row.querySelector(".axis-control").style.setProperty("--thumb", axisColor(displayedAxis));
   state.teams = null;
   renderRoster();
   renderPreview();
@@ -829,7 +826,7 @@ function turnOffAllWeights() {
   renderWorkedExample();
   renderResults();
   saveState();
-  showToast("All instructor-controlled weights are off.");
+  showToast("Baseline questionnaire mapping is active with no instructor adjustments.");
 }
 
 function openStudentDialog(student = null) {

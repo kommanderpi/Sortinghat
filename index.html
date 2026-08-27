@@ -132,7 +132,7 @@
               <p>Place each questionnaire signal on the spectrum and choose its influence.</p>
             </div>
             <div class="section-actions">
-              <button class="button button--quiet" id="turnOffWeightsButton" type="button">Set instructor weights to off</button>
+              <button class="button button--quiet" id="turnOffWeightsButton" type="button">Use baseline · no instructor adjustments</button>
               <button class="button button--secondary" id="resetWeightsButton" type="button">Reset to neutral · 1× light</button>
             </div>
           </div>
@@ -161,9 +161,10 @@
               </button>
               <div id="formulaContent">
                 <code>evidence = tool response − 1 (0 for blank/unfamiliar); selected area = 2</code>
+                <code>effective setting = instructor override, or built-in axis at 1× when no adjustment is set</code>
                 <code>normalized = Σ(evidence × axis × influence) ÷ Σ(evidence × |axis| × influence)</code>
                 <code>position = 50 + (normalized × 50)</code>
-                <p>Blank answers add no evidence. A neutral-axis signal builds confidence without pulling the position. Recent activities use their fixed 0.65 multiplier; a manual direct-position signal uses its fixed rule.</p>
+                <p>Blank and unfamiliar answers add no evidence. A neutral-axis instructor override builds confidence without pulling position. Baseline questionnaire mappings remain active at 1×; recent activities use their fixed 0.65 multiplier and a manual direct-position signal uses its fixed rule.</p>
               </div>
             </div>
             <fieldset class="sort-mode-card">
@@ -273,7 +274,7 @@
               </div>
               <div class="sort-map-axis-labels"><span>0 · Hardware signals</span><span>Bridge</span><span>Software signals · 100</span></div>
             </div>
-            <footer id="sortMapNote">Each name will be positioned by its complete weighted questionnaire score.</footer>
+            <footer id="sortMapNote">Each name will be positioned by its effective questionnaire score: instructor override or built-in baseline per signal.</footer>
           </section>
 
           <div class="teams-grid">
