@@ -41,19 +41,14 @@ Unrecognized questionnaire fields remain private and are ignored. All app state 
 
 ## GitHub Pages deployment
 
-This directory includes a GitHub Actions workflow that publishes the static app whenever the `main` branch is pushed.
+This repository has no deployment workflow. Because the app is static, it can be published with any GitHub Pages configuration that serves this directory’s static files.
 
-1. Create a GitHub repository and copy this directory into it.
-2. Commit and push to `main`.
-3. In **Settings → Pages**, choose **GitHub Actions** as the source.
-4. Open the URL shown by the completed `Deploy GitHub Pages` workflow.
-
-The `.gitignore` excludes questionnaire CSV files, generated roster bundles, and local screenshots. Check `git status` before every push and never force-add files from `data/`.
+The `.gitignore` excludes questionnaire CSV files, local roster files, and screenshots. Check `git status` before every push and never force-add files from `data/`.
 
 ## Scoring model
 
-Each familiarity answer becomes 0–3 evidence points. Fixed professional/academic area choices contribute background evidence. The instructor can assign every tool and background area an axis position from −3 (hardware) to +3 (software), plus an influence multiplier from 0× to 3×. Blank answers contribute no evidence.
+Each familiarity answer becomes 0–3 evidence points. Fixed professional/academic area choices contribute background evidence. The instructor can assign every tool and background area an axis position from −3 (hardware) to +3 (software), plus an influence multiplier from 0× to 3×. Blank answers contribute no evidence. Directional active weights move a student’s position; neutral active weights add response confidence without moving it.
 
-The deterministic balanced sorter seeds students with the strongest orientations first, then tests cross-cohort swaps to minimize differences in cohort size, hardware evidence, software evidence, overall orientation, familiarity coverage, and professional experience.
+Turning instructor weights off removes tool and professional-area evidence, but recent-activity answers and optional manual self-described practice remain fixed signals. The Scoring page states whether those signals distinguish the roster, remain without differentiating it, or are absent. With no fixed evidence, all students sit at Bridge. When fixed evidence does not differentiate students, balanced cohorts fall back to professional experience, cohort size, then name; a skill-spectrum split falls back to alphabetical order.
 
-The alternative skill-spectrum split ranks the complete roster by continuous spectrum position and divides at the cohort median. This guarantees approximately equal cohort sizes even when the class contains many more software-oriented signals. The resulting groups remain simply Cohort A and Cohort B; both take both modules.
+Balanced cohorts distribute the strongest orientations first and improve the result with swaps that reduce differences in size, orientation, hardware and software evidence, confidence, and professional experience. A skill-spectrum split ranks the roster by position, then confidence, then name, and divides it at the median for an approximately 50/50 split. Both cohorts complete both modules. See [the scoring architecture](docs/architecture.md#scoring-and-sorting).

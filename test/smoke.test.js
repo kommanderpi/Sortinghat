@@ -46,6 +46,38 @@ const assertions = `
 
   SIGNAL_DEFINITIONS.forEach((signal) => { state.weights[signal.key].influence = 0; });
   assert(SIGNAL_DEFINITIONS.every((signal) => state.weights[signal.key].influence === 0), "Turning instructor weights off should update every visible influence control");
+  const offStatus = getScoringStatus();
+  assert(offStatus.allOff, "The scoring status should identify when every instructor weight is off");
+  assert(offStatus.title.includes("everyone ties at Bridge"), "The scoring status should explain the no-evidence fallback");
+
+  state.sortMode = "balanced";
+  runSort(false);
+  assert(state.teams.A.length === 6 && state.teams.B.length === 5, "An all-off balanced sort should keep cohort sizes as equal as possible");
+  assert(state.students.every((student) => scoreStudent(student).position === 50), "Students without fixed evidence should sit at Bridge when weights are off");
+
+  state.sortMode = "split";
+  runSort(false);
+  const alphabeticalNames = state.students.map((student) => student.name).sort((a, b) => a.localeCompare(b));
+  assert(state.teams.A.map(findStudent).map((student) => student.name).join("|") === alphabeticalNames.slice(0, 6).join("|"), "An all-off spectrum split should use the documented alphabetical tie-break");
+
+  state.students[0].directPosition = 3;
+  const neutralStatus = getScoringStatus();
+  assert(neutralStatus.title.includes("does not separate this roster"), "Neutral fixed evidence should not claim to separate the roster");
+  state.students[0].directPosition = null;
+  state.students[0].activities.activityGithub = 1;
+  const fixedStatus = getScoringStatus();
+  assert(fixedStatus.title.includes("fixed evidence still separates"), "The scoring status should identify recent activity evidence that separates students");
+
+  const completeRoster = state.students;
+  state.sortMode = "balanced";
+  state.students = [sampleStudent("Fixed one", "", 0, {}), sampleStudent("Fixed two", "", 0, {})];
+  state.students[0].activities.activityGithub = 1;
+  state.students[1].activities.activityGithub = 3;
+  assert(scoreStudent(state.students[0]).position === scoreStudent(state.students[1]).position, "Same-direction fixed activity can produce equal positions");
+  assert(getScoringStatus().title.includes("fixed evidence still separates"), "Balanced mode should recognize different raw software evidence at equal positions");
+  state.students[1].activities.activityGithub = 1;
+  assert(getScoringStatus().title.includes("does not separate this roster"), "Identical fixed evidence should not claim to separate the roster");
+  state.students = completeRoster;
 
   const headers = [
     "What is your preferred name?",

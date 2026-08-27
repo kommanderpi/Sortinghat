@@ -326,6 +326,18 @@ main { min-height: calc(100vh - 140px); }
 .model-controls .sort-mode-card { grid-template-columns: 1fr 1fr; align-content: center; }
 .model-controls .sort-mode-card legend { grid-column: 1 / -1; }
 
+.scoring-status { margin: -10px 0 26px; padding: 15px 17px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; border: 1px solid #b8c87b; border-radius: 13px; background: #f1f5df; }
+.scoring-status.is-off { border-color: #e5ad79; background: #fff1e2; box-shadow: inset 4px 0 var(--orange); }
+.scoring-status-icon { width: 34px; height: 34px; display: grid; place-items: center; color: white; background: #82982d; border-radius: 50%; font-weight: 900; }
+.scoring-status.is-off .scoring-status-icon { background: var(--orange); }
+.scoring-status-copy > p:first-child { margin: 0 0 3px; color: #667821; font-size: 8px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+.scoring-status.is-off .scoring-status-copy > p:first-child { color: #a14e28; }
+.scoring-status-copy h3 { margin: 0; font-family: Georgia, serif; font-size: 17px; }
+.scoring-status-copy > p:last-child { max-width: 760px; margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.scoring-status-details { max-width: 275px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.scoring-status-details span { padding: 5px 7px; border: 1px solid rgba(102,120,33,.25); border-radius: 999px; color: #526118; background: rgba(255,255,255,.55); font-size: 8px; font-weight: 800; }
+.scoring-status.is-off .scoring-status-details span { border-color: rgba(161,78,40,.25); color: #89401e; }
+
 .scoring-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(480px, .9fr); gap: 28px; align-items: start; }
 .weights-card, .score-preview { border: 1px solid var(--line); border-radius: 14px; background: white; }
 .weights-header { padding: 20px; border-bottom: 1px solid var(--line); display: flex; align-items: end; justify-content: space-between; gap: 20px; }

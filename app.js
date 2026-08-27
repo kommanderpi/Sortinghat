@@ -121,7 +121,7 @@ function cacheElements() {
     "landingPage", "enterSite", "brandHome",
     "datasetLabel", "studentSearch", "loadSampleButton", "rosterBody", "readinessDot",
     "readinessText", "turnOffWeightsButton", "resetWeightsButton", "weightsList", "previewDots", "classCenter",
-    "classConfidence", "formulaToggle", "formulaContent", "runSortButton", "sortButtonLabel", "sortAgainButton",
+    "classConfidence", "scoringStatus", "formulaToggle", "formulaContent", "runSortButton", "sortButtonLabel", "sortAgainButton",
     "exportButton", "resultsTitle", "resultsSummary", "balanceScoreBadge", "balanceScore", "balanceDenominator", "balanceKicker", "balanceTitle", "balanceDescription",
     "balanceMetrics", "teamACount", "teamBCount", "teamAList", "teamBList", "teamARange",
     "teamBRange", "teamAName", "teamBName", "teamAFooter", "teamBFooter", "dragHint", "explainToggle", "explainBody", "decisionLog",
@@ -173,6 +173,7 @@ function renderAll() {
   renderRoster();
   renderWeights();
   renderPreview();
+  renderScoringStatus();
   renderSortMode();
   renderResults();
   saveState();
@@ -251,7 +252,71 @@ function renderPreview() {
   const mean = average(scored.map((item) => item.position));
   const confidence = average(scored.map((item) => item.confidence));
   els.classCenter.textContent = scored.length ? formatPosition(mean) : "—";
-  els.classConfidence.textContent = scored.length ? `${Math.round(confidence)}%` : "—";
+  const activeInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].influence > 0).length;
+  els.classConfidence.textContent = !scored.length ? "—" : activeInstructorSignals ? `${Math.round(confidence)}%` : "N/A";
+}
+
+function getScoringStatus() {
+  const activeInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].influence > 0).length;
+  const fixedEvidenceStudents = state.students.filter((student) => (
+    student.directPosition != null || ACTIVITY_SIGNALS.some((signal) => Number(student.activities?.[signal.key]) > 0)
+  )).length;
+  const allOff = activeInstructorSignals === 0;
+  const balanced = state.sortMode === "balanced";
+  const scores = allOff ? state.students.map(scoreStudent) : [];
+  const varies = (key) => scores.some((score) => Math.abs(score[key] - (scores[0]?.[key] ?? score[key])) > 0.0001);
+  const fixedEvidenceSeparates = varies("position") || (balanced && (varies("hardware") || varies("software")));
+
+  if (!allOff) {
+    return {
+      allOff,
+      title: `${activeInstructorSignals} of ${SIGNAL_DEFINITIONS.length} instructor weights active`,
+      description: balanced
+        ? "Directional tool and professional-area weights shape position; every active weight builds response confidence. Neutral-axis weights add confidence without pulling either way. The Hat balances those measures with fixed activity evidence, manual direct-position signals, experience, and cohort size."
+        : "Directional tool and professional-area weights shape position; every active weight builds response confidence. Neutral-axis weights add confidence without pulling either way. The Hat ranks by position, then uses confidence and name to break ties before the 50/50 split.",
+      details: [`${activeInstructorSignals} weighted signals`, `${fixedEvidenceStudents} students with fixed evidence`, balanced ? "Position + confidence balance" : "Confidence breaks position ties"]
+    };
+  }
+
+  if (fixedEvidenceStudents && fixedEvidenceSeparates) {
+    return {
+      allOff,
+      title: "Instructor weights are off—fixed evidence still separates the room",
+      description: balanced
+        ? "Tool familiarity and professional areas are ignored. Recent activity responses and manual direct-position signals can still differentiate spectrum positions or hardware/software evidence; the Hat balances those differences with professional experience and cohort size."
+        : "Tool familiarity and professional areas are ignored. The Hat ranks students only by recent activity responses and manual direct-position signals, then divides that ranking approximately 50/50.",
+      details: ["0 weighted signals", `${fixedEvidenceStudents} students with fixed evidence`, balanced ? "Experience + size still balance" : "Ranked median split"]
+    };
+  }
+
+  if (fixedEvidenceStudents) {
+    return {
+      allOff,
+      title: "Instructor weights are off—fixed evidence does not separate this roster",
+      description: balanced
+        ? "Recent activity responses or manual direct-position signals remain, but they produce the same sorting evidence across this roster. The Hat therefore builds approximately equal cohorts using professional experience, with names breaking exact ties."
+        : "Recent activity responses or manual direct-position signals remain, but they produce the same position across this roster. The Hat therefore creates an approximately 50/50 alphabetical split.",
+      details: ["0 weighted signals", `${fixedEvidenceStudents} students with fixed evidence`, balanced ? "Experience + size decide" : "Alphabetical tie-break"]
+    };
+  }
+
+  return {
+    allOff,
+    title: "Instructor weights are off—everyone ties at Bridge",
+    description: balanced
+      ? "No positional evidence remains, so every student sits at 50. The Hat builds approximately equal cohorts using professional experience, with names breaking exact ties."
+      : "No positional evidence remains, so every student sits at 50. The Hat creates an approximately 50/50 split, with names breaking the tie alphabetically.",
+    details: ["0 weighted signals", "No fixed position evidence", balanced ? "Experience + size only" : "Alphabetical tie-break"]
+  };
+}
+
+function renderScoringStatus() {
+  const status = getScoringStatus();
+  const signature = JSON.stringify(status);
+  if (els.scoringStatus.dataset.signature === signature) return;
+  els.scoringStatus.dataset.signature = signature;
+  els.scoringStatus.classList.toggle("is-off", status.allOff);
+  els.scoringStatus.innerHTML = `<span class="scoring-status-icon" aria-hidden="true">${status.allOff ? "!" : "✓"}</span><div class="scoring-status-copy"><p>What drives this sort</p><h3>${escapeHtml(status.title)}</h3><p>${escapeHtml(status.description)}</p></div><div class="scoring-status-details">${status.details.map((detail) => `<span>${escapeHtml(detail)}</span>`).join("")}</div>`;
 }
 
 function buildPreviewLayout(scored) {
@@ -446,6 +511,7 @@ function handleSortModeChange(event) {
   state.teams = null;
   state.decisionLog = [];
   renderSortMode();
+  renderScoringStatus();
   renderResults();
   saveState();
 }
@@ -639,6 +705,7 @@ function handleWeightChange(event) {
   state.teams = null;
   renderRoster();
   renderPreview();
+  if (setting === "influence") renderScoringStatus();
   renderResults();
   saveState();
 }
@@ -649,6 +716,7 @@ function resetWeights() {
   renderWeights();
   renderRoster();
   renderPreview();
+  renderScoringStatus();
   renderResults();
   saveState();
   showToast("Default scoring restored.");
@@ -661,6 +729,7 @@ function turnOffAllWeights() {
   renderWeights();
   renderRoster();
   renderPreview();
+  renderScoringStatus();
   renderResults();
   saveState();
   showToast("All instructor-controlled weights are off.");
