@@ -28,6 +28,50 @@ Recent-activity responses and the optional manual self-described-practice answer
 
 A weighted signal with a non-zero axis affects a student’s hardware-to-software position. Any active instructor-controlled weight, including a neutral-axis weight, contributes to response confidence. Recent activity and manual self-described practice do not add response confidence.
 
+### Position arithmetic
+
+For an active tool signal, the response is converted to evidence as follows: a blank response (`0`) and an unfamiliar response (`1`) produce `0`; responses `2`, `3`, and `4` produce evidence `1`, `2`, and `3` respectively. A selected professional or academic area has fixed evidence `2`.
+
+For each included instructor-controlled signal, the app adds the following to the position calculation:
+
+```text
+signed numerator       = evidence × axis × influence
+directional denominator = evidence × |axis| × influence
+normalized              = signed numerator total ÷ directional denominator total
+position                = clamp(50 + normalized × 50, 0, 100)
+```
+
+An axis of `0` therefore adds `0` to both position totals: it cannot move a student away from Bridge. If the directional denominator is `0`, normalized is `0` and position is `50`. Positions below `42` are hardware, positions above `58` are software, and the interval in between is Bridge.
+
+Recent activity uses its questionnaire frequency level (from `0` to `3`), its fixed signal axis, and a fixed `0.65` multiplier in the same signed and directional calculations. The manual self-described-practice response is a value from `1` to `5` and uses these fixed terms:
+
+```text
+signed numerator contribution = (direct position − 3) × 6
+directional denominator contribution = 12
+```
+
+Consequently, the center manual response (`3`) contributes no signed direction but still supplies a denominator of `12`.
+
+### Confidence arithmetic
+
+Confidence reflects only active instructor-controlled signals. Its numerator is the student's tool evidence times each active tool's influence, plus `2 × influence` for each selected active area. Its denominator includes `3 × influence` for every active tool—even if the student left it blank or marked unfamiliar—and `2 × influence` for each selected active area.
+
+```text
+confidence = clamp(confidence evidence ÷ possible instructor evidence × 100, 0, 100)
+```
+
+Fixed activity and manual direct-position signals do not change confidence. The live worked example displays `N/A` rather than a percentage when all instructor-controlled signals are off, or when no active instructor-controlled signal applies to the selected student.
+
+### Worked placement example
+
+The Scoring page lets the instructor select a loaded student and renders a live placement explanation. It lists every non-zero included contribution, including its signed calculation, signed numerator amount, and directional-denominator amount. Beneath the table it displays the total position arithmetic, final location on the 0–100 line, and the confidence calculation. It updates when the selected student or an instructor weight changes. With no roster, it asks the instructor to import or add a student; with no included contributions, it explains whether the cause is all weights being off, no matching active signal, or blank/unfamiliar answers.
+
+### Reset and default settings
+
+`DEFAULT_WEIGHTS` is built from the curated axes and influence values declared for the tool and area definitions. It is used for a new browser state and when the instructor confirms **Start new session**.
+
+The Scoring page's **Reset to neutral · 1× light** action is intentionally different: it gives every instructor-controlled signal axis `0` and influence `1`. This makes instructor-controlled evidence confidence-only until the instructor gives one or more signals a directional axis. The separate **Set instructor weights to off** action sets every instructor-controlled influence to `0`; fixed activity and manual signals, if present, still affect position.
+
 ### Scoring-page status
 
 The Scoring page counts active instructor-controlled signals and explains which evidence currently drives the sort.

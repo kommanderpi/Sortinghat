@@ -121,7 +121,7 @@ function cacheElements() {
     "landingPage", "enterSite", "brandHome",
     "datasetLabel", "studentSearch", "loadSampleButton", "rosterBody", "readinessDot",
     "readinessText", "turnOffWeightsButton", "resetWeightsButton", "weightsList", "previewDots", "classCenter",
-    "classConfidence", "scoringStatus", "formulaToggle", "formulaContent", "runSortButton", "sortButtonLabel", "sortAgainButton",
+    "classConfidence", "scoringStatus", "workedExampleStudent", "workedExampleBody", "formulaToggle", "formulaContent", "runSortButton", "sortButtonLabel", "sortAgainButton",
     "exportButton", "resultsTitle", "resultsSummary", "balanceScoreBadge", "balanceScore", "balanceDenominator", "balanceKicker", "balanceTitle", "balanceDescription",
     "balanceMetrics", "teamACount", "teamBCount", "teamAList", "teamBList", "teamARange",
     "teamBRange", "teamAName", "teamBName", "teamAFooter", "teamBFooter", "dragHint", "explainToggle", "explainBody", "decisionLog",
@@ -152,6 +152,7 @@ function bindEvents() {
   els.rosterBody.addEventListener("click", handleRosterAction);
   els.weightsList.addEventListener("input", handleWeightChange);
   els.weightsList.addEventListener("change", handleWeightChange);
+  els.workedExampleStudent.addEventListener("change", renderWorkedExample);
   document.querySelectorAll('input[name="sortMode"]').forEach((input) => input.addEventListener("change", handleSortModeChange));
   [els.teamAList, els.teamBList].forEach(bindDropZone);
 }
@@ -174,6 +175,7 @@ function renderAll() {
   renderWeights();
   renderPreview();
   renderScoringStatus();
+  renderWorkedExample();
   renderSortMode();
   renderResults();
   saveState();
@@ -258,6 +260,7 @@ function renderPreview() {
 
 function getScoringStatus() {
   const activeInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].influence > 0).length;
+  const directionalInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].influence > 0 && Math.abs(state.weights[signal.key].axis) > 0.0001).length;
   const fixedEvidenceStudents = state.students.filter((student) => (
     student.directPosition != null || ACTIVITY_SIGNALS.some((signal) => Number(student.activities?.[signal.key]) > 0)
   )).length;
@@ -267,9 +270,22 @@ function getScoringStatus() {
   const varies = (key) => scores.some((score) => Math.abs(score[key] - (scores[0]?.[key] ?? score[key])) > 0.0001);
   const fixedEvidenceSeparates = varies("position") || (balanced && (varies("hardware") || varies("software")));
 
+  if (!allOff && directionalInstructorSignals === 0) {
+    return {
+      allOff,
+      neutral: true,
+      title: "Instructor weights are neutral—confidence only",
+      description: balanced
+        ? "Every active instructor axis is 0, so tool and professional-area answers build response confidence without moving students along the line. Fixed activities and manual direct-position signals can still position students; the Hat also balances confidence, experience, and cohort size."
+        : "Every active instructor axis is 0, so tool and professional-area answers build response confidence without moving students along the line. Fixed activities and manual direct-position signals set position; confidence and name break position ties before the 50/50 split.",
+      details: [`${activeInstructorSignals} confidence weights`, "0 directional weights", balanced ? "Confidence + experience balance" : "Confidence breaks position ties"]
+    };
+  }
+
   if (!allOff) {
     return {
       allOff,
+      neutral: false,
       title: `${activeInstructorSignals} of ${SIGNAL_DEFINITIONS.length} instructor weights active`,
       description: balanced
         ? "Directional tool and professional-area weights shape position; every active weight builds response confidence. Neutral-axis weights add confidence without pulling either way. The Hat balances those measures with fixed activity evidence, manual direct-position signals, experience, and cohort size."
@@ -281,6 +297,7 @@ function getScoringStatus() {
   if (fixedEvidenceStudents && fixedEvidenceSeparates) {
     return {
       allOff,
+      neutral: false,
       title: "Instructor weights are off—fixed evidence still separates the room",
       description: balanced
         ? "Tool familiarity and professional areas are ignored. Recent activity responses and manual direct-position signals can still differentiate spectrum positions or hardware/software evidence; the Hat balances those differences with professional experience and cohort size."
@@ -292,6 +309,7 @@ function getScoringStatus() {
   if (fixedEvidenceStudents) {
     return {
       allOff,
+      neutral: false,
       title: "Instructor weights are off—fixed evidence does not separate this roster",
       description: balanced
         ? "Recent activity responses or manual direct-position signals remain, but they produce the same sorting evidence across this roster. The Hat therefore builds approximately equal cohorts using professional experience, with names breaking exact ties."
@@ -302,6 +320,7 @@ function getScoringStatus() {
 
   return {
     allOff,
+    neutral: false,
     title: "Instructor weights are off—everyone ties at Bridge",
     description: balanced
       ? "No positional evidence remains, so every student sits at 50. The Hat builds approximately equal cohorts using professional experience, with names breaking exact ties."
@@ -316,7 +335,60 @@ function renderScoringStatus() {
   if (els.scoringStatus.dataset.signature === signature) return;
   els.scoringStatus.dataset.signature = signature;
   els.scoringStatus.classList.toggle("is-off", status.allOff);
-  els.scoringStatus.innerHTML = `<span class="scoring-status-icon" aria-hidden="true">${status.allOff ? "!" : "✓"}</span><div class="scoring-status-copy"><p>What drives this sort</p><h3>${escapeHtml(status.title)}</h3><p>${escapeHtml(status.description)}</p></div><div class="scoring-status-details">${status.details.map((detail) => `<span>${escapeHtml(detail)}</span>`).join("")}</div>`;
+  els.scoringStatus.classList.toggle("is-neutral", status.neutral);
+  els.scoringStatus.innerHTML = `<span class="scoring-status-icon" aria-hidden="true">${status.allOff ? "!" : status.neutral ? "↔" : "✓"}</span><div class="scoring-status-copy"><p>What drives this sort</p><h3>${escapeHtml(status.title)}</h3><p>${escapeHtml(status.description)}</p></div><div class="scoring-status-details">${status.details.map((detail) => `<span>${escapeHtml(detail)}</span>`).join("")}</div>`;
+}
+
+function renderWorkedExample() {
+  const previousId = els.workedExampleStudent.value;
+  const selectedStudent = state.students.find((student) => student.id === previousId) || state.students[0];
+  els.workedExampleStudent.disabled = !selectedStudent;
+  els.workedExampleStudent.innerHTML = selectedStudent
+    ? state.students.map((student) => `<option value="${escapeHtml(student.id)}" ${student.id === selectedStudent.id ? "selected" : ""}>${escapeHtml(student.name)}</option>`).join("")
+    : '<option value="">No students loaded</option>';
+  els.workedExampleBody.innerHTML = renderWorkedExampleModel(buildWorkedExampleModel(selectedStudent, state.weights));
+}
+
+function buildWorkedExampleModel(student, weights) {
+  if (!student) return { empty: true, message: "Import a roster or add a student to see a worked placement example." };
+  const breakdown = calculateScoreBreakdown(student, weights);
+  return {
+    empty: false,
+    studentName: student.name,
+    ...breakdown,
+    noDirectionalEvidence: breakdown.directionalEvidence === 0,
+    confidenceUnavailable: breakdown.possibleEvidence === 0,
+    allInstructorWeightsOff: SIGNAL_DEFINITIONS.every((signal) => !weights[signal.key] || weights[signal.key].influence === 0)
+  };
+}
+
+function renderWorkedExampleModel(model) {
+  if (model.empty) return `<p class="worked-example-empty">${escapeHtml(model.message)}</p>`;
+  const noContributionMessage = model.allInstructorWeightsOff
+    ? "Instructor-controlled answers are ignored because all instructor weights are off. This student has no fixed activity or manual direct-position evidence."
+    : model.confidenceUnavailable
+      ? "None of this student's answers match an active instructor-controlled signal, and no fixed activity or manual direct-position evidence applies."
+      : "This student has no evidence points to show. Blank and unfamiliar tool responses contribute 0 evidence.";
+  const rows = model.contributions.length ? model.contributions.map((item) => `<tr>
+    <th scope="row"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.context)}</small></th>
+    <td><code>${escapeHtml(item.signedFormula)}</code></td>
+    <td>${formatNumber(item.signed)}</td>
+    <td>${formatNumber(item.directional)}</td>
+  </tr>`).join("") : `<tr><td colspan="4" class="worked-example-empty">${escapeHtml(noContributionMessage)}</td></tr>`;
+  const confidenceText = model.confidenceUnavailable
+    ? model.allInstructorWeightsOff ? "N/A — all instructor-controlled signals are off" : "N/A — no applicable active instructor evidence for this student"
+    : `${formatNumber(model.allEvidence)} ÷ ${formatNumber(model.possibleEvidence)} × 100 = ${Math.round(model.confidence)}%`;
+  const positionMath = model.noDirectionalEvidence
+    ? "No directional denominator → normalized 0 → 50 + (0 × 50) = 50"
+    : `${formatNumber(model.signed)} ÷ ${formatNumber(model.directionalEvidence)} ≈ ${formatNumber(model.normalized, 3)} → 50 + (${formatNumber(model.normalized, 3)} × 50) ≈ ${formatNumber(model.position)}`;
+  return `<div class="worked-example-name"><span>${escapeHtml(model.studentName)}</span><strong>${formatNumber(model.position)} / 100 · ${capitalize(model.band)}</strong></div>
+    <div class="worked-example-axis" style="--position:${model.position}%" role="img" aria-label="${escapeHtml(model.studentName)} is at ${formatNumber(model.position)} out of 100, in the ${escapeHtml(model.band)} band"><div><span>0 · Hardware</span><span>50 · Bridge</span><span>Software · 100</span></div><i><b></b></i></div>
+    <div class="worked-example-table-wrap"><table><thead><tr><th>Evidence contribution</th><th>Signed calculation</th><th>Numerator</th><th>Directional denominator</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="worked-example-result">
+      <div><small>Position arithmetic</small><code>${escapeHtml(positionMath)}</code></div>
+      <div><small>Final placement</small><strong>${formatNumber(model.position)} / 100 · ${capitalize(model.band)}</strong><span>${escapeHtml(formatPosition(model.position))}</span></div>
+      <div><small>Response confidence</small><code>${escapeHtml(confidenceText)}</code>${model.confidenceUnavailable ? "" : "<span>Possible evidence includes every active tool at 3 × influence—even when blank or unfamiliar—and each selected area at 2 × influence.</span>"}</div>
+    </div>`;
 }
 
 function buildPreviewLayout(scored) {
@@ -516,54 +588,71 @@ function handleSortModeChange(event) {
   saveState();
 }
 
-function scoreStudent(student) {
+function calculateScoreBreakdown(student, weights, includeContributions = true) {
   let signed = 0;
   let directionalEvidence = 0;
   let allEvidence = 0;
   let possibleEvidence = 0;
   let hardware = 0;
   let software = 0;
+  const contributions = includeContributions ? [] : null;
   TOOL_DEFINITIONS.forEach((tool) => {
-    const setting = state.weights[tool.key];
+    const setting = weights[tool.key];
     const response = clamp(Number(student.skills?.[tool.key]) || 0, 0, 4);
     const evidence = response ? response - 1 : 0;
     if (!setting || setting.influence === 0) return;
-    signed += evidence * setting.axis * setting.influence;
-    directionalEvidence += evidence * Math.abs(setting.axis) * setting.influence;
+    const signedContribution = evidence * setting.axis * setting.influence;
+    const directionalContribution = evidence * Math.abs(setting.axis) * setting.influence;
+    signed += signedContribution;
+    directionalEvidence += directionalContribution;
     allEvidence += evidence * setting.influence;
     possibleEvidence += 3 * setting.influence;
     if (setting.axis < 0) hardware += evidence * Math.abs(setting.axis) * setting.influence;
     if (setting.axis > 0) software += evidence * setting.axis * setting.influence;
+    if (includeContributions && evidence) contributions.push({ label: tool.label, context: `Tool response ${response} → evidence ${evidence}; ${setting.influence}× influence${setting.axis === 0 ? "; neutral axis adds confidence only" : ""}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(setting.axis)} × ${formatNumber(setting.influence)}`, signed: signedContribution, directional: directionalContribution });
   });
   AREA_DEFINITIONS.forEach((area) => {
     if (!student.areas?.includes(area.key)) return;
-    const setting = state.weights[area.key];
+    const setting = weights[area.key];
     if (!setting || setting.influence === 0) return;
     const evidence = 2;
-    signed += evidence * setting.axis * setting.influence;
-    directionalEvidence += evidence * Math.abs(setting.axis) * setting.influence;
+    const signedContribution = evidence * setting.axis * setting.influence;
+    const directionalContribution = evidence * Math.abs(setting.axis) * setting.influence;
+    signed += signedContribution;
+    directionalEvidence += directionalContribution;
     allEvidence += evidence * setting.influence;
     possibleEvidence += 2 * setting.influence;
     if (setting.axis < 0) hardware += evidence * Math.abs(setting.axis) * setting.influence;
     if (setting.axis > 0) software += evidence * setting.axis * setting.influence;
+    if (includeContributions) contributions.push({ label: area.label, context: `Selected area → fixed evidence 2; ${setting.influence}× influence${setting.axis === 0 ? "; neutral axis adds confidence only" : ""}`, signedFormula: `2 × ${formatNumber(setting.axis)} × ${formatNumber(setting.influence)}`, signed: signedContribution, directional: directionalContribution });
   });
   ACTIVITY_SIGNALS.forEach((signal) => {
     const evidence = clamp(Number(student.activities?.[signal.key]) || 0, 0, 3);
-    signed += evidence * signal.axis * 0.65;
-    directionalEvidence += evidence * Math.abs(signal.axis) * 0.65;
+    const signedContribution = evidence * signal.axis * 0.65;
+    const directionalContribution = evidence * Math.abs(signal.axis) * 0.65;
+    signed += signedContribution;
+    directionalEvidence += directionalContribution;
     if (signal.axis < 0) hardware += evidence * Math.abs(signal.axis) * 0.65;
     else software += evidence * signal.axis * 0.65;
+    if (includeContributions && evidence) contributions.push({ label: activityLabel(signal.key), context: `Recent activity level ${evidence}; fixed 0.65 multiplier`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(signal.axis)} × 0.65`, signed: signedContribution, directional: directionalContribution });
   });
   if (student.directPosition != null) {
     const direct = clamp(Number(student.directPosition), 1, 5);
-    signed += (direct - 3) * 6;
+    const signedContribution = (direct - 3) * 6;
+    signed += signedContribution;
     directionalEvidence += 12;
+    if (includeContributions) contributions.push({ label: "Manual direct position", context: `Choice ${direct} of 5; fixed center 3, scale 6, denominator 12`, signedFormula: `(${formatNumber(direct)} − 3) × 6`, signed: signedContribution, directional: 12 });
   }
   const normalized = directionalEvidence ? signed / directionalEvidence : 0;
   const position = clamp(50 + normalized * 50, 0, 100);
   const confidence = possibleEvidence ? clamp((allEvidence / possibleEvidence) * 100, 0, 100) : 0;
   const band = position < 42 ? "hardware" : position > 58 ? "software" : "bridge";
-  return { position, confidence, band, hardware, software, experience: Number(student.experience) || 0 };
+  const score = { position, confidence, band, hardware, software, experience: Number(student.experience) || 0 };
+  return includeContributions ? { ...score, contributions, signed, directionalEvidence, normalized, allEvidence, possibleEvidence } : score;
+}
+
+function scoreStudent(student) {
+  return calculateScoreBreakdown(student, state.weights, false);
 }
 
 function strongestEvidence(student) {
@@ -705,21 +794,28 @@ function handleWeightChange(event) {
   state.teams = null;
   renderRoster();
   renderPreview();
-  if (setting === "influence") renderScoringStatus();
+  renderWorkedExample();
+  renderScoringStatus();
   renderResults();
   saveState();
 }
 
 function resetWeights() {
-  state.weights = structuredClone(DEFAULT_WEIGHTS);
+  state.weights = createNeutralWeights();
   state.teams = null;
+  state.decisionLog = [];
   renderWeights();
   renderRoster();
   renderPreview();
   renderScoringStatus();
+  renderWorkedExample();
   renderResults();
   saveState();
-  showToast("Default scoring restored.");
+  showToast("All instructor settings reset to neutral at 1× light.");
+}
+
+function createNeutralWeights() {
+  return Object.fromEntries(SIGNAL_DEFINITIONS.map((signal) => [signal.key, { axis: 0, influence: 1 }]));
 }
 
 function turnOffAllWeights() {
@@ -730,6 +826,7 @@ function turnOffAllWeights() {
   renderRoster();
   renderPreview();
   renderScoringStatus();
+  renderWorkedExample();
   renderResults();
   saveState();
   showToast("All instructor-controlled weights are off.");
@@ -1003,6 +1100,8 @@ function capitalize(value) { return value.charAt(0).toUpperCase() + value.slice(
 function initials(name) { return String(name || "?").split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase(); }
 function bandColor(band) { return band === "hardware" ? "#ee713d" : band === "software" ? "#6d5bd0" : "#bed64b"; }
 function axisColor(axis) { return axis < -0.5 ? "#ee713d" : axis > 0.5 ? "#6d5bd0" : "#8fa630"; }
+function formatNumber(value, decimals = 2) { return Number(value).toFixed(decimals).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1"); }
+function activityLabel(key) { return ({ activityGithub: "Recent GitHub contribution", activityMicro: "Recent microcontroller prototype", activityCad: "Recent CAD drawing", activityWritingAi: "Recent writing-AI use", activityImageAi: "Recent image-AI use" })[key] || key; }
 function formatPosition(position) {
   if (position < 45) return `H ${Math.round(50 - position)}`;
   if (position > 55) return `S ${Math.round(position - 50)}`;

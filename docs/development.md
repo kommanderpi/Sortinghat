@@ -20,7 +20,7 @@ When Node.js is available, run the dependency-free smoke test:
 node test/smoke.test.js
 ```
 
-The test loads [app.js](../app.js) with browser stubs and checks sample scoring, both cohort strategies, all-instructor-weights-off fallbacks, fixed activity evidence, CSV import, and sort-map layout.
+The test loads [app.js](../app.js) with browser stubs and checks sample scoring, the live worked-example calculation, neutral-reset semantics, both cohort strategies, all-instructor-weights-off fallbacks, fixed activity evidence, CSV import, and sort-map layout.
 
 ## Debugging state
 
