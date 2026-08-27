@@ -26,14 +26,16 @@ Export the Google Forms responses as CSV. The importer recognizes preferred name
 
 ## Scoring and cohort strategies
 
-The score is driven by reported student evidence, with no instructor weighting controls or tool-specific strength values. Every contribution is classified only as Hardware (`−1`), Bridge (`0`), or Software (`+1`), and every raw evidence point has equal placement strength. A tool response supplies 0–3 points (`response − 1`, with blank and unfamiliar both 0); a selected area supplies one point; recent activity uses its reported level (0–3); and an optional manual choice supplies its signed distance from choice 3.
+The score is driven by reported student evidence. Mappings only classify evidence as Hardware (`−1`), Bridge (`0`), or Software (`+1`): there are no per-tool or per-student weighting controls. Page 2 has one global **Hardware / Software question-balance** slider. Its default 50 / 50 setting compensates for the questionnaire’s unequal directional capacity (28 Hardware points and 51 Software points), so either category has the same maximum opportunity to affect placement. It applies one shared multiplier to every mapped Hardware question and another to every mapped Software question; it never changes relative strength within a category. The marked **Questions as-is** point, 35.4 / 64.6, restores raw 1× / 1× question points.
+
+A tool response supplies 0–3 points (`response − 1`, with blank and unfamiliar both 0); a selected area supplies one point; recent activity uses its reported level (0–3); and an optional manual choice supplies its signed distance from choice 3. The slider affects mapped tools, areas, and activities, but not Bridge mappings, confidence, or the manual response.
 
 Page 2 provides a live, student-specific worked example with every contribution, the signed numerator, directional denominator, placement, and response confidence. Choose either:
 
 - **Balanced cohorts** — distributes the room to reduce gaps in position, hardware and software evidence, confidence, experience, and avoidable size. Its balancing optimizer still uses fixed trade-off coefficients; those affect cohort assignment, not a student's evidence strength or placement.
 - **Skill-spectrum split** — ranks the room on the line and divides it approximately 50/50.
 
-See [the scoring architecture](docs/architecture.md#scoring-and-sorting) for mappings and formulas, and [development notes](docs/development.md) for verification and local-state details.
+See [the scoring architecture](docs/architecture.md#scoring-and-sorting) for the balance formula and mappings, and [development notes](docs/development.md) for verification and local-state details.
 
 ## Deployment and data safety
 

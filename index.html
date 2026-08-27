@@ -129,7 +129,7 @@
             <div>
               <p class="section-kicker">02 · SCORING</p>
               <h2 id="scoringTitle">See how the data places the room</h2>
-              <p>Student responses supply equal-strength evidence points along categorical Hardware, Bridge, and Software directions.</p>
+              <p>Student responses are compared after one transparent Hardware–Software question balance is applied.</p>
             </div>
           </div>
 
@@ -151,6 +151,27 @@
           </section>
 
           <div class="model-controls">
+            <section class="direction-balance-card" aria-labelledby="directionBalanceTitle">
+              <header>
+                <div>
+                  <p class="section-kicker">QUESTION BALANCE</p>
+                  <h3 id="directionBalanceTitle">Balance Hardware and Software opportunities</h3>
+                </div>
+                <output id="directionBalanceOutput" for="directionBalance">50 / 50</output>
+              </header>
+              <p>Center compensates for the unequal number of questions on each side. Move the slider only when you intentionally want one category to have more influence.</p>
+              <label class="sr-only" for="directionBalance">Software share of directional question influence</label>
+              <div class="direction-balance-range">
+                <input id="directionBalance" type="range" min="0" max="100" step="0.1" value="50" aria-describedby="directionWeightSummary rawQuestionMarkerValue" />
+                <span id="rawQuestionMarker" class="raw-question-marker" role="note" aria-label="Questions as-is at 35.4 percent Hardware and 64.6 percent Software; both point multipliers are 1 times"><i></i><small>Questions as-is<b id="rawQuestionMarkerValue">35.4 / 64.6</b></small></span>
+              </div>
+              <div class="direction-balance-labels" aria-hidden="true"><span>Favor Hardware</span><span>Equal opportunity</span><span>Favor Software</span></div>
+              <div class="direction-balance-values">
+                <span>Hardware share <strong id="hardwareBalanceValue">50%</strong></span>
+                <span>Software share <strong id="softwareBalanceValue">50%</strong></span>
+              </div>
+              <p id="directionWeightSummary" class="direction-weight-summary"></p>
+            </section>
             <div class="formula-card">
               <button id="formulaToggle" type="button" aria-expanded="true">
                 <span><i aria-hidden="true">ƒ</i> Score formula</span><span aria-hidden="true">⌃</span>
@@ -158,10 +179,11 @@
               <div id="formulaContent">
                 <code>evidence = tool response − 1 (0 for blank/unfamiliar); selected area = 1</code>
                 <code>direction = Hardware −1, Bridge 0, Software +1</code>
-                <code>signed = evidence × direction; directional = evidence × |direction|</code>
+                <code>signed = evidence × direction × category balance</code>
+                <code>directional = evidence × |direction| × category balance</code>
                 <code>normalized = Σ(signed contribution) ÷ Σ(directional contribution)</code>
                 <code>position = 50 + (normalized × 50)</code>
-                <p>Blank and unfamiliar answers add no evidence. Every reported evidence point has equal strength: tools, selected professional areas, recent activities, and manual distance from the center are never multiplied by a tool-specific importance value.</p>
+                <p>Blank and unfamiliar answers add no evidence. The category-balance slider applies one shared multiplier to all Hardware questions and another to all Software questions. It never changes one tool relative to another on the same side; manual distance remains unadjusted.</p>
               </div>
             </div>
             <fieldset class="sort-mode-card">
@@ -258,7 +280,7 @@
               </div>
               <div class="sort-map-axis-labels"><span>0 · Hardware signals</span><span>Bridge</span><span>Software signals · 100</span></div>
             </div>
-            <footer id="sortMapNote">Each name is positioned by equal-strength student evidence points and categorical directions.</footer>
+            <footer id="sortMapNote">Each name is positioned by student evidence after the global Hardware–Software question balance is applied.</footer>
           </section>
 
           <div class="teams-grid">

@@ -19,9 +19,9 @@ flowchart LR
 
 ## Scoring and sorting
 
-### Categorical directions and equal evidence
+### Categorical directions and the global question balance
 
-There are no instructor weighting, axis-adjustment, reset-to-default-weights, or override functions. Each tool, professional/academic area, and recent-activity mapping has only a categorical direction:
+There are no per-tool, per-area, per-activity, or per-student weighting controls. Each tool, professional/academic area, and recent-activity mapping has only a categorical direction:
 
 | Direction | Value | Meaning |
 | --- | ---: | --- |
@@ -29,17 +29,35 @@ There are no instructor weighting, axis-adjustment, reset-to-default-weights, or
 | Bridge | `0` | Does not move placement, but questionnaire evidence can still increase confidence. |
 | Software | `+1` | Moves a placement toward the Software end of the line. |
 
-The mappings are declared in [app.js](../app.js). Their values convey direction only, never relative strength: every raw evidence point produces one unit of signed and directional placement strength (unless it is Bridge, which produces zero directional strength).
+The mappings are declared in [app.js](../app.js). Their values convey direction only, never relative strength within a category. A global Page 2 slider supplies the only directional adjustment: it applies one common multiplier to every mapped Hardware contribution and one common multiplier to every mapped Software contribution. Bridge has an effective multiplier of `1`, but its zero direction means it never contributes directional placement strength.
 
-A tool response is parsed on a 0–4 familiarity scale. Blank is `0`, unfamiliar is `1`, somewhat is `2`, moderately is `3`, and very familiar is `4`. Tool evidence is `max(response − 1, 0)`: blank and unfamiliar supply `0`, while the remaining answers supply `1`, `2`, or `3` equal-strength points. Each selected professional or academic area supplies one equal-strength point. Recent activity uses its parsed frequency level, `0`–`3`, directly; it has no multiplier. An optional manual direct-position response is a value from 1 through 5 and uses its signed distance from choice 3. It is not a confidence input.
+The form has unequal directional capacity. Maximum raw evidence is calculated from every mapped tool at three points, every mapped area at one point, and every mapped recent activity at three points:
+
+| Direction | Tools | Areas | Activities | Maximum raw points |
+| --- | ---: | ---: | ---: | ---: |
+| Hardware | `7 × 3` | `1 × 1` | `2 × 3` | `28` |
+| Software | `13 × 3` | `3 × 1` | `3 × 3` | `51` |
+
+The **Hardware / Software question-balance** slider ranges from 0 to 100, in 0.1-point steps, and records the Software share; Hardware receives the remaining share. With `H = 28`, `S = 51`, `T = H + S = 79`, and slider shares `h` and `s` as decimals, the shared multipliers are:
+
+```text
+Hardware multiplier = h × T ÷ H
+Software multiplier = s × T ÷ S
+```
+
+At the default center (`h = s = 0.5`), the multipliers are `79 ÷ 56 ≈ 1.4107` for Hardware and `79 ÷ 102 ≈ 0.7745` for Software. Thus `28 × 1.4107` and `51 × 0.7745` both equal `39.5`: a fully answered category has the same maximum directional opportunity on either side. Moving left intentionally favors Hardware; moving right intentionally favors Software. It does not differentiate questions on the same side.
+
+The slider visually marks **Questions as-is** at Hardware `35.4` / Software `64.6` (the underlying Software share is `51 ÷ 79`). At that mark, both multipliers are exactly `1×`, so the original unequal number of mapped form opportunities is used without category balancing.
+
+A tool response is parsed on a 0–4 familiarity scale. Blank is `0`, unfamiliar is `1`, somewhat is `2`, moderately is `3`, and very familiar is `4`. Tool evidence is `max(response − 1, 0)`: blank and unfamiliar supply `0`, while the remaining answers supply `1`, `2`, or `3` raw points. Each selected professional or academic area supplies one raw point. Recent activity uses its parsed frequency level, `0`–`3`, directly. The same category multiplier is then applied to every mapped tool, area, and activity on that direction. An optional manual direct-position response is a value from 1 through 5 and uses its signed distance from choice 3. It is not a confidence input or category-balanced.
 
 ### Position calculation
 
-For each tool, selected-area, or recent-activity contribution:
+For each tool, selected-area, or recent-activity contribution, `category multiplier` is the global Hardware or Software multiplier above:
 
 ```text
-signed contribution       = raw evidence × categorical direction
-directional contribution  = raw evidence × |categorical direction|
+signed contribution       = raw evidence × categorical direction × category multiplier
+directional contribution  = raw evidence × |categorical direction| × category multiplier
 signed numerator          = Σ signed contribution
 directional denominator   = Σ directional contribution
 normalized direction      = signed numerator ÷ directional denominator
@@ -53,7 +71,7 @@ signed contribution      = direct position − 3
 directional contribution = |direct position − 3|
 ```
 
-Thus a manual choice of `3` adds no signed or directional contribution. If the total directional denominator is `0`, normalized direction is `0` and position is `50`. Scores below `42` are Hardware, scores above `58` are Software, and the interval between them is Bridge.
+Manual direct position is deliberately not adjusted by the question-balance slider. Thus a manual choice of `3` adds no signed or directional contribution. If the total directional denominator is `0`, normalized direction is `0` and position is `50`. Scores below `42` are Hardware, scores above `58` are Software, and the interval between them is Bridge.
 
 ### Response confidence
 
@@ -63,11 +81,15 @@ Confidence measures questionnaire response evidence, not activity or manual sign
 confidence = clamp(questionnaire evidence ÷ possible questionnaire evidence × 100, 0, 100)
 ```
 
-No weight modifies either confidence total. A Bridge tool or area can increase confidence without changing directional position. With the current tool definitions, every student has possible tool evidence, so the rendered confidence calculation has a denominator even when every tool response is blank or unfamiliar.
+The question-balance slider does not modify either confidence total. A Bridge tool or area can increase confidence without changing directional position. With the current tool definitions, every student has possible tool evidence, so the rendered confidence calculation has a denominator even when every tool response is blank or unfamiliar.
 
 ### Page 2 worked example
 
-The Scoring page describes a response-driven equal-evidence model and the selected cohort strategy. It labels the three directions as Hardware `−1`, Bridge `0`, and Software `+1`, and states that tools, selected areas, recent activities, and manual distance are never multiplied by a tool-specific importance value. The instructor can select a loaded student for a live worked example. It lists each included contribution with its signed calculation, signed-numerator amount, and directional-denominator amount, then displays total arithmetic, 0–100 placement, band, and confidence calculation. With no roster, the page asks for an import or a manual student; with no included evidence, it explains why no rows appear.
+The Scoring page places the global balance control above the formula and cohort-strategy controls. It shows the current Hardware / Software shares, the two resulting point multipliers, and the marked Questions-as-is position. The range input has an accessible label and value text; the marker is also exposed with its ratio and `1×` meaning.
+
+Moving the slider immediately updates placements, the roster, preview, scoring status, worked example, and results display. It clears existing teams and the decision log because those were produced with a different directional balance, then persists the updated value. The status card and generated decision log disclose the active Hardware and Software multipliers.
+
+The instructor can select a loaded student for a live worked example. It lists each included contribution with its category multiplier in the signed calculation, signed-numerator amount, and directional-denominator amount, then displays total arithmetic, 0–100 placement, band, and confidence calculation. Manual rows explicitly state that their distance from the center is not adjusted. With no roster, the page asks for an import or a manual student; with no included evidence, it explains why no rows appear.
 
 ### Cohort strategies and tie-breaks
 
@@ -77,4 +99,6 @@ The Scoring page describes a response-driven equal-evidence model and the select
 
 ### Persistent browser state and migration
 
-The browser stores state under the local-storage key `desinv-sortinghat-v4`. Stored state contains the scoring-model version, roster, dataset label, selected cohort strategy, generated teams, and decision log. At startup, the app deletes a legacy `weights` property if present. It also invalidates generated teams and the decision log when either a legacy `weights` property was present **or** the saved scoring-model version differs from `SCORING_MODEL_VERSION`. In both cases, the roster and `sortMode` remain, and the state is recorded with the current scoring-model version. Normal rendering saves the normalized state back to local storage. If browser local storage is unavailable, the app continues for the current session without persistence.
+The browser stores state under the local-storage key `desinv-sortinghat-v4`. Stored state contains the scoring-model version, `directionBalance`, roster, dataset label, selected cohort strategy, generated teams, and decision log. `directionBalance` is normalized to the slider’s 0–100 range and one-decimal precision; new sessions start at `50`.
+
+The current `SCORING_MODEL_VERSION` is `3`. At startup, the app deletes a legacy `weights` property if present. It invalidates generated teams and the decision log when a legacy `weights` property was present, `directionBalance` needed normalization, or the saved scoring-model version differs from `3`. The roster and `sortMode` remain, and state is recorded with the current version. Normal rendering saves normalized state back to local storage. If browser local storage is unavailable, the app continues for the current session without persistence.

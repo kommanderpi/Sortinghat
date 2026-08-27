@@ -1,7 +1,8 @@
 "use strict";
 
 const STORAGE_KEY = "desinv-sortinghat-v4";
-const SCORING_MODEL_VERSION = 2;
+const SCORING_MODEL_VERSION = 3;
+const DEFAULT_DIRECTION_BALANCE = 50;
 const COHORT_NAMES = { A: "Hufflestuff", B: "Ravenworks" };
 
 const TOOL_DEFINITIONS = [
@@ -51,6 +52,16 @@ const ACTIVITY_SIGNALS = [
   { key: "activityImageAi", match: ["generative ai like midjourney"], axis: 1 }
 ];
 
+const DIRECTION_CAPACITY = {
+  hardware: TOOL_DEFINITIONS.filter((signal) => signal.axis < 0).length * 3
+    + AREA_DEFINITIONS.filter((signal) => signal.axis < 0).length
+    + ACTIVITY_SIGNALS.filter((signal) => signal.axis < 0).length * 3,
+  software: TOOL_DEFINITIONS.filter((signal) => signal.axis > 0).length * 3
+    + AREA_DEFINITIONS.filter((signal) => signal.axis > 0).length
+    + ACTIVITY_SIGNALS.filter((signal) => signal.axis > 0).length * 3
+};
+const RAW_QUESTION_BALANCE = DIRECTION_CAPACITY.software / (DIRECTION_CAPACITY.hardware + DIRECTION_CAPACITY.software) * 100;
+
 const SAMPLE_STUDENTS = [
   sampleStudent("Maya", "she/her", 2, { prototyping: 4, cad: 4, parametric: 3, microcontrollers: 3, electronics: 2, printing3d: 4, laserCutting: 3, figma: 3, javascript: 1, vscode: 1 }),
   sampleStudent("Leo", "he/him", 1, { javascript: 4, api: 4, webhooks: 3, github: 4, vscode: 4, database: 3, machineLearning: 3, openai: 4, llm: 3, prototyping: 2 }),
@@ -84,6 +95,7 @@ function sampleStudent(name, pronouns, experience, skills) {
 let state = loadState() || {
   students: structuredClone(COURSE_STUDENTS),
   scoringModelVersion: SCORING_MODEL_VERSION,
+  directionBalance: DEFAULT_DIRECTION_BALANCE,
   datasetLabel: COURSE_DATASET_LABEL,
   sortMode: "balanced",
   teams: null,
@@ -117,7 +129,7 @@ function cacheElements() {
     "restartButton", "csvInput", "addStudentButton", "studentCount",
     "landingPage", "enterSite", "brandHome",
     "datasetLabel", "studentSearch", "loadSampleButton", "rosterBody", "readinessDot",
-    "readinessText", "previewDots", "classCenter",
+    "readinessText", "directionBalance", "directionBalanceOutput", "hardwareBalanceValue", "softwareBalanceValue", "directionWeightSummary", "rawQuestionMarker", "rawQuestionMarkerValue", "previewDots", "classCenter",
     "classConfidence", "scoringStatus", "workedExampleStudent", "workedExampleBody", "formulaToggle", "formulaContent", "runSortButton", "sortButtonLabel", "sortAgainButton",
     "exportButton", "resultsTitle", "resultsSummary", "balanceScoreBadge", "balanceScore", "balanceDenominator", "balanceKicker", "balanceTitle", "balanceDescription",
     "balanceMetrics", "teamACount", "teamBCount", "teamAList", "teamBList", "teamARange",
@@ -137,6 +149,7 @@ function bindEvents() {
   els.studentSearch.addEventListener("input", renderRoster);
   els.loadSampleButton.addEventListener("click", loadSampleRoster);
   els.csvInput.addEventListener("change", importCsv);
+  els.directionBalance.addEventListener("input", handleDirectionBalanceChange);
   els.runSortButton.addEventListener("click", runSort);
   els.sortAgainButton.addEventListener("click", runSort);
   els.exportButton.addEventListener("click", exportTeams);
@@ -165,6 +178,7 @@ function showLandingPage(event) {
 function renderAll() {
   normalizeState();
   renderRoster();
+  renderDirectionBalance();
   renderPreview();
   renderScoringStatus();
   renderWorkedExample();
@@ -177,12 +191,16 @@ function normalizeState() {
   state.students ||= [];
   state.datasetLabel ||= "Local roster";
   state.sortMode ||= "balanced";
+  const rawDirectionBalance = Number(state.directionBalance);
+  const normalizedDirectionBalance = Number.isFinite(rawDirectionBalance) ? Math.round(clamp(rawDirectionBalance, 0, 100) * 10) / 10 : DEFAULT_DIRECTION_BALANCE;
+  const directionBalanceChanged = state.directionBalance !== normalizedDirectionBalance;
+  state.directionBalance = normalizedDirectionBalance;
   const scoringModelChanged = state.scoringModelVersion !== SCORING_MODEL_VERSION;
   const hadLegacyWeights = Object.prototype.hasOwnProperty.call(state, "weights");
   if (hadLegacyWeights) {
     delete state.weights;
   }
-  if (scoringModelChanged || hadLegacyWeights) {
+  if (scoringModelChanged || hadLegacyWeights || directionBalanceChanged) {
     state.teams = null;
     state.decisionLog = [];
     state.scoringModelVersion = SCORING_MODEL_VERSION;
@@ -233,14 +251,58 @@ function renderPreview() {
   els.classConfidence.textContent = scored.length ? `${Math.round(confidence)}%` : "—";
 }
 
+function getDirectionWeights(balance = state.directionBalance) {
+  const softwareShare = clamp(Number(balance) || 0, 0, 100) / 100;
+  const hardwareShare = 1 - softwareShare;
+  const totalCapacity = DIRECTION_CAPACITY.hardware + DIRECTION_CAPACITY.software;
+  return {
+    hardware: hardwareShare * totalCapacity / DIRECTION_CAPACITY.hardware,
+    software: softwareShare * totalCapacity / DIRECTION_CAPACITY.software,
+    hardwareShare: hardwareShare * 100,
+    softwareShare: softwareShare * 100
+  };
+}
+
+function evidenceWeight(direction, weights = getDirectionWeights()) {
+  return direction < 0 ? weights.hardware : direction > 0 ? weights.software : 1;
+}
+
+function renderDirectionBalance() {
+  const weights = getDirectionWeights();
+  els.directionBalance.value = state.directionBalance;
+  els.directionBalance.setAttribute("aria-valuetext", `${formatNumber(weights.hardwareShare, 1)}% Hardware and ${formatNumber(weights.softwareShare, 1)}% Software`);
+  els.directionBalanceOutput.textContent = `${formatNumber(weights.hardwareShare, 1)} / ${formatNumber(weights.softwareShare, 1)}`;
+  els.hardwareBalanceValue.textContent = `${formatNumber(weights.hardwareShare, 1)}%`;
+  els.softwareBalanceValue.textContent = `${formatNumber(weights.softwareShare, 1)}%`;
+  els.rawQuestionMarker.style.setProperty("--raw-question-balance", `${RAW_QUESTION_BALANCE}%`);
+  els.rawQuestionMarker.title = `Questions as-is: ${formatNumber(100 - RAW_QUESTION_BALANCE, 1)}% Hardware / ${formatNumber(RAW_QUESTION_BALANCE, 1)}% Software gives every raw point a 1× multiplier.`;
+  els.rawQuestionMarker.setAttribute("aria-label", `Questions as-is at ${formatNumber(100 - RAW_QUESTION_BALANCE, 1)}% Hardware and ${formatNumber(RAW_QUESTION_BALANCE, 1)}% Software; both point multipliers are 1×.`);
+  els.rawQuestionMarkerValue.textContent = `${formatNumber(100 - RAW_QUESTION_BALANCE, 1)} / ${formatNumber(RAW_QUESTION_BALANCE, 1)}`;
+  els.directionWeightSummary.textContent = `Each Hardware point ×${formatNumber(weights.hardware)} · each Software point ×${formatNumber(weights.software)}. Center equalizes the ${DIRECTION_CAPACITY.hardware} Hardware and ${DIRECTION_CAPACITY.software} Software points available; the “Questions as-is” mark is ×1 for both.`;
+}
+
+function handleDirectionBalanceChange(event) {
+  state.directionBalance = Math.round(clamp(Number(event.target.value), 0, 100) * 10) / 10;
+  state.teams = null;
+  state.decisionLog = [];
+  renderDirectionBalance();
+  renderRoster();
+  renderPreview();
+  renderScoringStatus();
+  renderWorkedExample();
+  renderResults();
+  saveState();
+}
+
 function getScoringStatus() {
   const balanced = state.sortMode === "balanced";
+  const weights = getDirectionWeights();
   return {
-    title: "Student responses alone determine evidence strength",
+    title: state.directionBalance === DEFAULT_DIRECTION_BALANCE ? "Question opportunities balanced equally" : `Direction balance: ${formatNumber(weights.hardwareShare, 1)}% Hardware · ${formatNumber(weights.softwareShare, 1)}% Software`,
     description: balanced
-      ? "Each reported evidence point counts equally. Questions supply only Hardware, Bridge, or Software direction; no tool, area, activity, or manual response has a strength multiplier. The Hat then balances position, confidence, experience, and cohort size."
-      : "Each reported evidence point counts equally. Questions supply only Hardware, Bridge, or Software direction; no tool, area, activity, or manual response has a strength multiplier before the ranked 50/50 split.",
-    details: [`${SIGNAL_DEFINITIONS.length} categorical mappings`, "Equal-strength evidence points", balanced ? "Position + confidence balance" : "Ranked median split"]
+      ? "The global balance compensates for unequal Hardware and Software question opportunities, then student responses determine placement. It never changes one tool relative to another on the same side. The Hat then balances position, confidence, experience, and cohort size."
+      : "The global balance compensates for unequal Hardware and Software question opportunities, then student responses determine placement. It never changes one tool relative to another on the same side before the ranked 50/50 split.",
+    details: [`Hardware point ×${formatNumber(weights.hardware)}`, `Software point ×${formatNumber(weights.software)}`, balanced ? "Position + confidence balance" : "Ranked median split"]
   };
 }
 
@@ -386,7 +448,7 @@ function renderSortMap(cohortA, cohortB) {
     els.sortMapCut.hidden = true;
     els.sortMapStudents.innerHTML = "";
     els.sortMapChart.style.setProperty("--chart-height", "250px");
-    els.sortMapNote.textContent = "Each name is positioned by equal-strength student evidence points and categorical directions.";
+    els.sortMapNote.textContent = "Each name is positioned by student evidence after the global Hardware–Software question balance is applied.";
     return;
   }
 
@@ -473,9 +535,10 @@ function renderTeam(name, students) {
 }
 
 function renderDecisionLog() {
+  const weights = getDirectionWeights();
   const fallback = [
     "<strong>Translate:</strong> familiarity answers become 0–3 evidence points.",
-    "<strong>Position:</strong> each evidence point counts equally in its categorical Hardware, Bridge, or Software direction.",
+    `<strong>Position:</strong> the global question balance applies ×${formatNumber(weights.hardware)} to Hardware points and ×${formatNumber(weights.software)} to Software points.`,
     "<strong>Balance:</strong> the hat searches for equal-size cohorts with similar hardware, software, and experience totals."
   ];
   els.decisionLog.innerHTML = (state.decisionLog.length ? state.decisionLog : fallback).map((entry) => `<li>${entry}</li>`).join("");
@@ -503,42 +566,46 @@ function calculateScoreBreakdown(student, includeContributions = true) {
   let possibleEvidence = 0;
   let hardware = 0;
   let software = 0;
+  const directionWeights = getDirectionWeights();
   const contributions = includeContributions ? [] : null;
   TOOL_DEFINITIONS.forEach((tool) => {
     const response = clamp(Number(student.skills?.[tool.key]) || 0, 0, 4);
     const evidence = response ? response - 1 : 0;
-    const signedContribution = evidence * tool.axis;
-    const directionalContribution = evidence * Math.abs(tool.axis);
+    const balanceWeight = evidenceWeight(tool.axis, directionWeights);
+    const signedContribution = evidence * tool.axis * balanceWeight;
+    const directionalContribution = evidence * Math.abs(tool.axis) * balanceWeight;
     signed += signedContribution;
     directionalEvidence += directionalContribution;
     allEvidence += evidence;
     possibleEvidence += 3;
-    if (tool.axis < 0) hardware += evidence * Math.abs(tool.axis);
-    if (tool.axis > 0) software += evidence * tool.axis;
-    if (includeContributions && evidence) contributions.push({ label: tool.label, context: `Tool response ${response} → evidence ${evidence}; ${directionLabel(tool.axis)}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(tool.axis)}`, signed: signedContribution, directional: directionalContribution });
+    if (tool.axis < 0) hardware += directionalContribution;
+    if (tool.axis > 0) software += directionalContribution;
+    if (includeContributions && evidence) contributions.push({ label: tool.label, context: `Tool response ${response} → evidence ${evidence}; ${directionLabel(tool.axis)}; category balance ×${formatNumber(balanceWeight)}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(tool.axis)} × ${formatNumber(balanceWeight)}`, signed: signedContribution, directional: directionalContribution });
   });
   AREA_DEFINITIONS.forEach((area) => {
     if (!student.areas?.includes(area.key)) return;
     const evidence = 1;
-    const signedContribution = evidence * area.axis;
-    const directionalContribution = evidence * Math.abs(area.axis);
+    const balanceWeight = evidenceWeight(area.axis, directionWeights);
+    const signedContribution = evidence * area.axis * balanceWeight;
+    const directionalContribution = evidence * Math.abs(area.axis) * balanceWeight;
     signed += signedContribution;
     directionalEvidence += directionalContribution;
     allEvidence += evidence;
     possibleEvidence += 1;
-    if (area.axis < 0) hardware += evidence * Math.abs(area.axis);
-    if (area.axis > 0) software += evidence * area.axis;
-    if (includeContributions) contributions.push({ label: area.label, context: `Selected area → one evidence point; ${directionLabel(area.axis)}`, signedFormula: `1 × ${formatNumber(area.axis)}`, signed: signedContribution, directional: directionalContribution });
+    if (area.axis < 0) hardware += directionalContribution;
+    if (area.axis > 0) software += directionalContribution;
+    if (includeContributions) contributions.push({ label: area.label, context: `Selected area → one evidence point; ${directionLabel(area.axis)}; category balance ×${formatNumber(balanceWeight)}`, signedFormula: `1 × ${formatNumber(area.axis)} × ${formatNumber(balanceWeight)}`, signed: signedContribution, directional: directionalContribution });
   });
   ACTIVITY_SIGNALS.forEach((signal) => {
     const evidence = clamp(Number(student.activities?.[signal.key]) || 0, 0, 3);
-    const signedContribution = evidence * signal.axis;
-    const directionalContribution = evidence * Math.abs(signal.axis);
+    const balanceWeight = evidenceWeight(signal.axis, directionWeights);
+    const signedContribution = evidence * signal.axis * balanceWeight;
+    const directionalContribution = evidence * Math.abs(signal.axis) * balanceWeight;
     signed += signedContribution;
     directionalEvidence += directionalContribution;
-    if (signal.axis < 0) hardware += evidence;
-    else software += evidence;
-    if (includeContributions && evidence) contributions.push({ label: activityLabel(signal.key), context: `Recent activity level ${evidence}; ${directionLabel(signal.axis)}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(signal.axis)}`, signed: signedContribution, directional: directionalContribution });
+    if (signal.axis < 0) hardware += directionalContribution;
+    else software += directionalContribution;
+    if (includeContributions && evidence) contributions.push({ label: activityLabel(signal.key), context: `Recent activity level ${evidence}; ${directionLabel(signal.axis)}; category balance ×${formatNumber(balanceWeight)}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(signal.axis)} × ${formatNumber(balanceWeight)}`, signed: signedContribution, directional: directionalContribution });
   });
   if (student.directPosition != null) {
     const direct = clamp(Number(student.directPosition), 1, 5);
@@ -546,7 +613,7 @@ function calculateScoreBreakdown(student, includeContributions = true) {
     const directionalContribution = Math.abs(signedContribution);
     signed += signedContribution;
     directionalEvidence += directionalContribution;
-    if (includeContributions) contributions.push({ label: "Manual direct position", context: `Choice ${direct} of 5; raw distance from center 3`, signedFormula: `${formatNumber(direct)} − 3`, signed: signedContribution, directional: directionalContribution });
+    if (includeContributions) contributions.push({ label: "Manual direct position", context: `Choice ${direct} of 5; raw distance from center 3; not adjusted by question balance`, signedFormula: `${formatNumber(direct)} − 3`, signed: signedContribution, directional: directionalContribution });
   }
   const normalized = directionalEvidence ? signed / directionalEvidence : 0;
   const position = clamp(50 + normalized * 50, 0, 100);
@@ -628,14 +695,16 @@ function runSort(navigate = true) {
   }
   state.teams = { A: A.map((student) => student.id), B: B.map((student) => student.id) };
   const finalBalance = calculateBalance(A, B);
-  const hardwareSignals = SIGNAL_DEFINITIONS.filter((signal) => signal.axis < 0).length;
-  const softwareSignals = SIGNAL_DEFINITIONS.filter((signal) => signal.axis > 0).length;
+  const directionWeights = getDirectionWeights();
+  const directionalSignals = [...SIGNAL_DEFINITIONS, ...ACTIVITY_SIGNALS];
+  const hardwareSignals = directionalSignals.filter((signal) => signal.axis < 0).length;
+  const softwareSignals = directionalSignals.filter((signal) => signal.axis > 0).length;
   if (state.sortMode === "split") {
     const aPositions = A.map((student) => scoreStudent(student).position);
     const bPositions = B.map((student) => scoreStudent(student).position);
     const cutPoint = (Math.max(...aPositions) + Math.min(...bPositions)) / 2;
     state.decisionLog = [
-      `<strong>Translated ${state.students.length} responses.</strong> Each student received one continuous Hardware ⇄ Software position.`,
+      `<strong>Translated ${state.students.length} responses.</strong> Each student received one continuous Hardware ⇄ Software position using Hardware ×${formatNumber(directionWeights.hardware)} and Software ×${formatNumber(directionWeights.software)} question balance.`,
       `<strong>Ranked the whole room.</strong> Students were ordered from the lowest to highest data-derived position; fixed Hardware, Bridge, and Software labels did not control the order.`,
       `<strong>Cut between the ranked groups at ${cutPoint.toFixed(1)}.</strong> The lower ${A.length} positions became ${COHORT_NAMES.A} and the upper ${B.length} became ${COHORT_NAMES.B}.`,
       `<strong>Guaranteed an approximate 50/50 split.</strong> This median method stays ${A.length}/${B.length} even when far more students cross the absolute Software signal threshold.`,
@@ -644,7 +713,7 @@ function runSort(navigate = true) {
   } else {
     state.decisionLog = [
       `<strong>Translated ${state.students.length} responses.</strong> Blank answers contributed no evidence; familiarity levels contributed 0–3 points.`,
-      `<strong>Counted evidence without strength weights.</strong> Every evidence point counted equally; ${hardwareSignals} questionnaire mappings point toward Hardware and ${softwareSignals} point toward Software.`,
+      `<strong>Applied one transparent category balance.</strong> Hardware evidence used ×${formatNumber(directionWeights.hardware)} and Software evidence used ×${formatNumber(directionWeights.software)}; all ${hardwareSignals} Hardware mappings remain equal to one another, as do all ${softwareSignals} Software mappings.`,
       `<strong>Seeded the cohorts.</strong> Students furthest from the class midpoint were placed first so rare strengths were distributed early.`,
       `<strong>Tested local swaps.</strong> The hat made ${swaps} improving swap${swaps === 1 ? "" : "s"} across ${passes} pass${passes === 1 ? "" : "es"}, minimizing hardware, software, experience, and size gaps.`,
       `<strong>Stopped at ${finalBalance.score}/100.</strong> A higher score means the two cohorts have more similar skill totals—not that either cohort is “better.”`
@@ -924,7 +993,7 @@ function loadSampleRoster() {
 function restartSession() {
   const approved = window.confirm("Start a new session? This clears the local roster and starts with the fixed scoring model.");
   if (!approved) return;
-  state = { students: structuredClone(COURSE_STUDENTS), scoringModelVersion: SCORING_MODEL_VERSION, datasetLabel: COURSE_DATASET_LABEL, sortMode: "balanced", teams: null, decisionLog: [] };
+  state = { students: structuredClone(COURSE_STUDENTS), scoringModelVersion: SCORING_MODEL_VERSION, directionBalance: DEFAULT_DIRECTION_BALANCE, datasetLabel: COURSE_DATASET_LABEL, sortMode: "balanced", teams: null, decisionLog: [] };
   renderAll();
   showView("roster");
   showToast("New session started.");
