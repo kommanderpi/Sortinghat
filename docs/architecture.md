@@ -2,101 +2,129 @@
 
 ## Application shape
 
-Sorting Hat is a browser-only static app. [index.html](../index.html) supplies the interface, [styles.css](../styles.css) supplies the presentation, and [app.js](../app.js) owns application state, scoring, sorting, CSV parsing, rendering, and CSV export. The browser stores the roster and instructor settings under the local-storage key `desinv-sortinghat-v4`.
+Sorting Hat is a browser-only static application. [index.html](../index.html) contains the interface, [styles.css](../styles.css) contains presentation, and [app.js](../app.js) owns browser state, CSV parsing, scoring, sorting, rendering, and CSV export. It has no server or build system.
 
 ```mermaid
 flowchart LR
   CSV[Google Forms CSV] --> Parse[CSV parser]
   Manual[Manual student entry] --> State[Browser state]
   Parse --> State
-  Settings[Instructor weights] --> Score[Student scoring]
-  State --> Score
-  Score --> Status[Scoring-page status]
+  State --> Score[Fixed data-driven scorer]
+  Score --> Worked[Page 2 worked example]
   Score --> Balanced[Balanced cohorts]
   Score --> Split[Skill-spectrum split]
-  Balanced --> Results[Results and export]
+  Balanced --> Results[Results and CSV export]
   Split --> Results
 ```
 
 ## Scoring and sorting
 
-### Evidence sources
+### Fixed axes and evidence
 
-Tool-familiarity responses contribute zero to three points. Selected professional or academic areas contribute fixed background evidence. Each tool and area definition has a built-in axis. Its effective setting is selected per row:
+There are no instructor weighting, axis-adjustment, reset-to-default-weights, or override functions. Each questionnaire definition supplies one fixed axis: negative values lean Hardware, positive values lean Software, and `0` is Bridge. Tool and selected-area evidence always uses that axis at equal `1×`.
 
-- **Baseline** — an influence of `0`, including a missing or invalid influence normalized to `0`, uses the definition’s built-in axis at `1×`. The stored instructor axis is not used while the row is baseline.
-- **Instructor override** — an influence of `1`, `2`, or `3` uses the stored instructor axis and that influence instead. If that stored axis is missing or invalid, normalization substitutes the definition’s built-in axis while retaining the valid override influence.
+A tool response is parsed on a 0–4 familiarity scale. Blank is `0`, unfamiliar is `1`, somewhat is `2`, moderately is `3`, and very familiar is `4`. Its evidence is `max(response − 1, 0)`, so blank and unfamiliar contribute `0`, while the remaining answers contribute `1`, `2`, or `3`. Every selected professional or academic area contributes fixed evidence of `2`.
 
-Consequently, questionnaire evidence is always scored. The instructor control changes a row’s mapping; it does not turn off a student’s answer. A zero-axis override is an enabled, neutral override: it has `1×`–`3×` influence for confidence but no directional effect.
+The built-in questionnaire axes are declared in [app.js](../app.js):
 
-Recent-activity responses and the optional manual self-described-practice answer are fixed signals. They remain in the position calculation when every instructor-controlled weight is off. They do not receive an instructor influence control.
+| Tool | Axis |
+| --- | ---: |
+| Prototyping | -1.4 |
+| CAD (Rhino, etc.) | -2.2 |
+| Parametric modelling | -0.8 |
+| Databases (MySQL, etc.) | 2.5 |
+| Machine learning | 2.5 |
+| Microcontrollers (Arduino, etc.) | -3 |
+| Electronics (sensors + actuators) | -3 |
+| Webhooks | 2.7 |
+| APIs | 2.7 |
+| JavaScript (p5.js, etc.) | 3 |
+| 3D printing | -2.6 |
+| Laser cutting | -2.8 |
+| Figma | 0.8 |
+| GitHub | 2.5 |
+| GitHub Copilot | 2.3 |
+| Visual Studio Code | 2.5 |
+| Visual Studio | 2.3 |
+| OpenAI (ChatGPT) | 1.8 |
+| Large language models | 2.2 |
+| Musical instruments | 0 |
+| Project management tools | 0 |
+| Natural language processing | 2.5 |
 
-An effective questionnaire signal with a non-zero axis affects a student’s hardware-to-software position. Every effective questionnaire setting, including a baseline mapping or neutral override, contributes to response confidence. Recent activity and manual self-described practice do not add response confidence.
+| Professional or academic area | Axis |
+| --- | ---: |
+| Technology and software development | 3 |
+| Manufacturing and engineering | -3 |
+| Design (graphic, UX/UI, industrial) | 0 |
+| Marketing and sales | 0 |
+| Healthcare and medical services | 0 |
+| Finance and accounting | 1 |
+| Education and training | 0 |
+| Non-profit and social impact | 0 |
+| Media and entertainment | 0.5 |
 
-### Position arithmetic
+Recent-activity answers are separate fixed signals. Their parsed frequency level is 0–3 and their contribution uses a fixed `0.65` multiplier:
 
-For each tool response, a blank response (`0`) and an unfamiliar response (`1`) produce `0`; responses `2`, `3`, and `4` produce evidence `1`, `2`, and `3` respectively. A selected professional or academic area has fixed evidence `2`.
+| Recent activity | Axis |
+| --- | ---: |
+| Contributed to a public or private GitHub repo | 2.5 |
+| Built a microcontroller prototype | -3 |
+| Made a CAD sketch or drawing | -2.3 |
+| Used a writing assistant or AI such as ChatGPT | 1.6 |
+| Used generative image AI such as Midjourney | 1.5 |
 
-For each included questionnaire signal, using its effective axis and influence, the app adds the following to the position calculation:
+An optional manual direct-position response is a value from 1 through 5. It is not a questionnaire weight or a confidence input; it uses the fixed calculation described below.
+
+### Position calculation
+
+For each included tool or selected-area contribution:
 
 ```text
-signed numerator       = evidence × axis × influence
-directional denominator = evidence × |axis| × influence
-normalized              = signed numerator total ÷ directional denominator total
-position                = clamp(50 + normalized × 50, 0, 100)
+signed contribution       = evidence × fixed axis
+directional contribution  = evidence × |fixed axis|
+signed numerator          = Σ signed contribution
+directional denominator   = Σ directional contribution
+normalized direction      = signed numerator ÷ directional denominator
+position                  = clamp(50 + normalized direction × 50, 0, 100)
 ```
 
-An axis of `0` therefore adds `0` to both position totals: it cannot move a student away from Bridge. If the directional denominator is `0`, normalized is `0` and position is `50`. Positions below `42` are hardware, positions above `58` are software, and the interval in between is Bridge.
-
-Recent activity uses its questionnaire frequency level (from `0` to `3`), its fixed signal axis, and a fixed `0.65` multiplier in the same signed and directional calculations. The manual self-described-practice response is a value from `1` to `5` and uses these fixed terms:
+Recent activity uses the same position arithmetic with its `0.65` multiplier:
 
 ```text
-signed numerator contribution = (direct position − 3) × 6
-directional denominator contribution = 12
+signed contribution      = activity level × fixed axis × 0.65
+directional contribution = activity level × |fixed axis| × 0.65
 ```
 
-Consequently, the center manual response (`3`) contributes no signed direction but still supplies a denominator of `12`.
-
-### Confidence arithmetic
-
-Confidence reflects effective questionnaire evidence. Its numerator is the student's tool evidence times each tool's effective influence, plus `2 × effective influence` for each selected area. Its denominator includes `3 × effective influence` for every tool—even if the student left it blank or marked unfamiliar—and `2 × effective influence` for each selected area. A baseline row therefore uses `1×` in both calculations, while an enabled override uses its selected `1×`, `2×`, or `3×` influence.
+The manual direct-position contribution is:
 
 ```text
-confidence = clamp(confidence evidence ÷ possible questionnaire evidence × 100, 0, 100)
+signed contribution      = (direct position − 3) × 6
+directional contribution = 12
 ```
 
-Fixed activity and manual direct-position signals do not change confidence. The live worked example displays `N/A` only when no possible questionnaire evidence is available; normal baseline settings provide a possible-evidence denominator through the tool rows.
+Thus a manual choice of `3` has no signed direction but still adds `12` to the denominator. If the total directional denominator is `0`, normalized direction is `0` and position is `50`. Scores below `42` are Hardware, scores above `58` are Software, and the interval between them is Bridge.
 
-### Worked placement example
+### Response confidence
 
-The Scoring page lets the instructor select a loaded student and renders a live placement explanation. It lists every included evidence contribution, including its signed calculation, signed numerator amount, and directional-denominator amount. Tool and area rows explicitly say either **baseline mapping at 1×** or **instructor override at N×**; a neutral override is also identified as confidence-only. Beneath the table it displays the total position arithmetic, final location on the 0–100 line, and the confidence calculation. It updates when the selected student or an instructor weight changes. With no roster, it asks the instructor to import or add a student; with no included contributions, it explains that blank and unfamiliar tools and unselected areas have no evidence points.
+Confidence measures questionnaire response evidence, not the activity or manual signals. Its numerator is all tool evidence plus `2` for each selected area. Its denominator includes `3` possible points for every defined tool and `2` possible points for every selected area:
 
-### Reset and default settings
+```text
+confidence = clamp(questionnaire evidence ÷ possible questionnaire evidence × 100, 0, 100)
+```
 
-`DEFAULT_WEIGHTS` is built from the curated axes and influence values declared for the tool and area definitions. It is used for a new browser state and when the instructor confirms **Start new session**.
+Because all questionnaire signals are fixed at equal `1×`, no weight modifies either confidence total. A zero-axis tool or area can increase confidence without changing directional position. With the current tool definitions, every student has possible tool evidence, so the normal rendered confidence calculation has a denominator even when every tool response is blank or unfamiliar.
 
-The Scoring page's **Reset to neutral · 1× light** action is intentionally different: it gives every instructor-controlled signal axis `0` and influence `1`. This creates enabled, confidence-only overrides for every questionnaire row until the instructor gives one or more rows a directional axis.
+### Page 2 worked example
 
-**Use baseline · no instructor adjustments** sets every instructor influence to `0`. It preserves each stored axis for possible later re-enabling, but each baseline row displays and uses its definition’s built-in axis at `1×` while disabled. It does not discard tool or area responses. Fixed activity and manual signals continue to use their fixed position rules in both modes.
-
-### Scoring-page status
-
-The Scoring page counts enabled instructor overrides and baseline mappings, then describes the active model:
-
-1. With all overrides baseline, it states that built-in questionnaire mappings at `1×` are active.
-2. With enabled overrides that all have axis `0`, it states that those overrides are confidence-only and, if applicable, that other rows remain baseline mappings.
-3. With a mix, it reports the directional override count and baseline-mapping count. Enabled rows override only their own questionnaire signals; all other rows retain their built-in mapping.
-
-The status also describes the selected cohort strategy. Fixed activity and manual signals are unchanged in every status state.
+The Scoring page presents a status description of the fixed model and selected cohort strategy. The instructor can select a loaded student for a live worked example. It lists each included tool, selected area, recent activity, and manual contribution with its signed calculation, signed-numerator amount, and directional-denominator amount. It then displays the total arithmetic, 0–100 placement, band, and confidence calculation. With no roster, the page asks for an import or a manual student; with no included evidence, it explains why no rows appear.
 
 ### Cohort strategies and tie-breaks
 
-The balanced strategy first considers students furthest from Bridge, with higher response confidence and then name used to resolve equal ordering. It assigns students while minimizing a loss based on avoidable cohort-size difference, orientation, hardware evidence, software evidence, confidence, and professional experience. It then accepts improving cross-cohort swaps, for at most 20 passes.
+**Balanced cohorts** sorts students furthest from Bridge first; ties use higher response confidence and then name. It assigns each student to minimize a loss based on avoidable cohort-size difference, average position, normalized hardware evidence, normalized software evidence, confidence, and professional experience. It then accepts improving cross-cohort swaps for up to 20 passes. The displayed balance score describes similarity of those totals; it is not a student-quality score.
 
-The skill-spectrum split ranks students from lower to higher position. Equal positions are ordered by higher response confidence, then alphabetical name; the lower half, rounded up for an odd-sized class, is the first cohort. This makes the split approximately 50/50.
+**Skill-spectrum split** ranks the room from lower to higher data-derived position. Equal positions are ordered by higher response confidence and then name. The lower half, rounded up for an odd-sized class, becomes Hufflestuff; the upper half becomes Ravenworks, producing an approximately 50/50 division. Both cohort names are separate from Hardware, Bridge, and Software signals, and both cohorts complete both course modules.
 
-Baseline mappings continue to produce confidence, so an all-baseline sort still uses response confidence in its normal ordering and balance calculations. If students tie on position, confidence, and the applicable balancing evidence, the existing name tie-break resolves their order.
+### Persistent browser state and migration
 
-### Persistent-state normalization
-
-The app stores state under the browser local-storage key `desinv-sortinghat-v4`. On load, it ensures each defined tool and area has a setting. Numeric axes are clamped to `−3` through `3` and rounded to one decimal place. Valid influences are `0`, `1`, `2`, and `3`; a missing or invalid influence becomes baseline (`0`), and a missing or invalid axis falls back to the definition’s built-in axis. This lets older or partial saved settings adopt baseline semantics without removing questionnaire evidence.
+The browser stores state under the local-storage key `desinv-sortinghat-v4`. Stored state contains the roster, dataset label, selected cohort strategy, generated teams, and decision log. If a saved state has the legacy `weights` property, startup deletes that property and invalidates the prior generated teams and decision log because they were produced under the old weighted model. The roster and `sortMode` remain. Normal rendering saves the normalized state back to local storage. If browser local storage is unavailable, the app continues for the current session without persistence.

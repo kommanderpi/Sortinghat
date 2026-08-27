@@ -4,40 +4,40 @@ const STORAGE_KEY = "desinv-sortinghat-v4";
 const COHORT_NAMES = { A: "Hufflestuff", B: "Ravenworks" };
 
 const TOOL_DEFINITIONS = [
-  { key: "prototyping", label: "Prototyping", category: "Making", axis: -1.4, influence: 2 },
-  { key: "cad", label: "CAD (Rhino, etc.)", category: "Making", axis: -2.2, influence: 2 },
-  { key: "parametric", label: "Parametric modelling", category: "Making + code", axis: -0.8, influence: 2 },
-  { key: "database", label: "Databases (MySQL, etc.)", category: "Software", axis: 2.5, influence: 2 },
-  { key: "machineLearning", label: "Machine learning", category: "Software", axis: 2.5, influence: 2 },
-  { key: "microcontrollers", label: "Microcontrollers (Arduino, etc.)", category: "Electronics", axis: -3, influence: 3 },
-  { key: "electronics", label: "Electronics (sensors + actuators)", category: "Electronics", axis: -3, influence: 3 },
-  { key: "webhooks", label: "Webhooks", category: "Software", axis: 2.7, influence: 2 },
-  { key: "api", label: "APIs", category: "Software", axis: 2.7, influence: 2 },
-  { key: "javascript", label: "JavaScript (p5.js, etc.)", category: "Creative code", axis: 3, influence: 3 },
-  { key: "printing3d", label: "3D printing", category: "Fabrication", axis: -2.6, influence: 2 },
-  { key: "laserCutting", label: "Laser cutting", category: "Fabrication", axis: -2.8, influence: 2 },
-  { key: "figma", label: "Figma", category: "Interface", axis: 0.8, influence: 1 },
-  { key: "github", label: "GitHub", category: "Software practice", axis: 2.5, influence: 2 },
-  { key: "copilot", label: "GitHub Copilot", category: "Software practice", axis: 2.3, influence: 1 },
-  { key: "vscode", label: "Visual Studio Code", category: "Software practice", axis: 2.5, influence: 2 },
-  { key: "visualStudio", label: "Visual Studio", category: "Software practice", axis: 2.3, influence: 1 },
-  { key: "openai", label: "OpenAI (ChatGPT)", category: "AI", axis: 1.8, influence: 1 },
-  { key: "llm", label: "Large language models", category: "AI", axis: 2.2, influence: 2 },
-  { key: "instruments", label: "Musical instruments", category: "Creative practice", axis: 0, influence: 1 },
-  { key: "projectManagement", label: "Project management tools", category: "Collaboration", axis: 0, influence: 1 },
-  { key: "nlp", label: "Natural language processing", category: "AI", axis: 2.5, influence: 2 }
+  { key: "prototyping", label: "Prototyping", category: "Making", axis: -1.4 },
+  { key: "cad", label: "CAD (Rhino, etc.)", category: "Making", axis: -2.2 },
+  { key: "parametric", label: "Parametric modelling", category: "Making + code", axis: -0.8 },
+  { key: "database", label: "Databases (MySQL, etc.)", category: "Software", axis: 2.5 },
+  { key: "machineLearning", label: "Machine learning", category: "Software", axis: 2.5 },
+  { key: "microcontrollers", label: "Microcontrollers (Arduino, etc.)", category: "Electronics", axis: -3 },
+  { key: "electronics", label: "Electronics (sensors + actuators)", category: "Electronics", axis: -3 },
+  { key: "webhooks", label: "Webhooks", category: "Software", axis: 2.7 },
+  { key: "api", label: "APIs", category: "Software", axis: 2.7 },
+  { key: "javascript", label: "JavaScript (p5.js, etc.)", category: "Creative code", axis: 3 },
+  { key: "printing3d", label: "3D printing", category: "Fabrication", axis: -2.6 },
+  { key: "laserCutting", label: "Laser cutting", category: "Fabrication", axis: -2.8 },
+  { key: "figma", label: "Figma", category: "Interface", axis: 0.8 },
+  { key: "github", label: "GitHub", category: "Software practice", axis: 2.5 },
+  { key: "copilot", label: "GitHub Copilot", category: "Software practice", axis: 2.3 },
+  { key: "vscode", label: "Visual Studio Code", category: "Software practice", axis: 2.5 },
+  { key: "visualStudio", label: "Visual Studio", category: "Software practice", axis: 2.3 },
+  { key: "openai", label: "OpenAI (ChatGPT)", category: "AI", axis: 1.8 },
+  { key: "llm", label: "Large language models", category: "AI", axis: 2.2 },
+  { key: "instruments", label: "Musical instruments", category: "Creative practice", axis: 0 },
+  { key: "projectManagement", label: "Project management tools", category: "Collaboration", axis: 0 },
+  { key: "nlp", label: "Natural language processing", category: "AI", axis: 2.5 }
 ];
 
 const AREA_DEFINITIONS = [
-  { key: "areaTechnology", value: "Technology and Software Development", label: "Technology + software development", category: "Background", axis: 3, influence: 2 },
-  { key: "areaManufacturing", value: "Manufacturing and Engineering", label: "Manufacturing + engineering", category: "Background", axis: -3, influence: 2 },
-  { key: "areaDesign", value: "Design (Graphic, UX/UI, Industrial)", label: "Design (graphic, UX/UI, industrial)", category: "Background", axis: 0, influence: 1 },
-  { key: "areaMarketing", value: "Marketing and Sales", label: "Marketing + sales", category: "Background", axis: 0, influence: 1 },
-  { key: "areaHealthcare", value: "Healthcare and Medical Services", label: "Healthcare + medical services", category: "Background", axis: 0, influence: 1 },
-  { key: "areaFinance", value: "Finance and Accounting", label: "Finance + accounting", category: "Background", axis: 1, influence: 1 },
-  { key: "areaEducation", value: "Education and Training", label: "Education + training", category: "Background", axis: 0, influence: 1 },
-  { key: "areaNonprofit", value: "Non-Profit and Social Impact", label: "Non-profit + social impact", category: "Background", axis: 0, influence: 1 },
-  { key: "areaMedia", value: "Media and Entertainment", label: "Media + entertainment", category: "Background", axis: 0.5, influence: 1 }
+  { key: "areaTechnology", value: "Technology and Software Development", label: "Technology + software development", category: "Background", axis: 3 },
+  { key: "areaManufacturing", value: "Manufacturing and Engineering", label: "Manufacturing + engineering", category: "Background", axis: -3 },
+  { key: "areaDesign", value: "Design (Graphic, UX/UI, Industrial)", label: "Design (graphic, UX/UI, industrial)", category: "Background", axis: 0 },
+  { key: "areaMarketing", value: "Marketing and Sales", label: "Marketing + sales", category: "Background", axis: 0 },
+  { key: "areaHealthcare", value: "Healthcare and Medical Services", label: "Healthcare + medical services", category: "Background", axis: 0 },
+  { key: "areaFinance", value: "Finance and Accounting", label: "Finance + accounting", category: "Background", axis: 1 },
+  { key: "areaEducation", value: "Education and Training", label: "Education + training", category: "Background", axis: 0 },
+  { key: "areaNonprofit", value: "Non-Profit and Social Impact", label: "Non-profit + social impact", category: "Background", axis: 0 },
+  { key: "areaMedia", value: "Media and Entertainment", label: "Media + entertainment", category: "Background", axis: 0.5 }
 ];
 
 const SIGNAL_DEFINITIONS = [...TOOL_DEFINITIONS, ...AREA_DEFINITIONS];
@@ -49,10 +49,6 @@ const ACTIVITY_SIGNALS = [
   { key: "activityWritingAi", match: ["assistant or ai like chatgpt"], axis: 1.6 },
   { key: "activityImageAi", match: ["generative ai like midjourney"], axis: 1.5 }
 ];
-
-const DEFAULT_WEIGHTS = Object.fromEntries(
-  SIGNAL_DEFINITIONS.map((signal) => [signal.key, { axis: signal.axis, influence: signal.influence }])
-);
 
 const SAMPLE_STUDENTS = [
   sampleStudent("Maya", "she/her", 2, { prototyping: 4, cad: 4, parametric: 3, microcontrollers: 3, electronics: 2, printing3d: 4, laserCutting: 3, figma: 3, javascript: 1, vscode: 1 }),
@@ -86,7 +82,6 @@ function sampleStudent(name, pronouns, experience, skills) {
 
 let state = loadState() || {
   students: structuredClone(COURSE_STUDENTS),
-  weights: structuredClone(DEFAULT_WEIGHTS),
   datasetLabel: COURSE_DATASET_LABEL,
   sortMode: "balanced",
   teams: null,
@@ -120,7 +115,7 @@ function cacheElements() {
     "restartButton", "csvInput", "addStudentButton", "studentCount",
     "landingPage", "enterSite", "brandHome",
     "datasetLabel", "studentSearch", "loadSampleButton", "rosterBody", "readinessDot",
-    "readinessText", "turnOffWeightsButton", "resetWeightsButton", "weightsList", "previewDots", "classCenter",
+    "readinessText", "previewDots", "classCenter",
     "classConfidence", "scoringStatus", "workedExampleStudent", "workedExampleBody", "formulaToggle", "formulaContent", "runSortButton", "sortButtonLabel", "sortAgainButton",
     "exportButton", "resultsTitle", "resultsSummary", "balanceScoreBadge", "balanceScore", "balanceDenominator", "balanceKicker", "balanceTitle", "balanceDescription",
     "balanceMetrics", "teamACount", "teamBCount", "teamAList", "teamBList", "teamARange",
@@ -140,8 +135,6 @@ function bindEvents() {
   els.studentSearch.addEventListener("input", renderRoster);
   els.loadSampleButton.addEventListener("click", loadSampleRoster);
   els.csvInput.addEventListener("change", importCsv);
-  els.turnOffWeightsButton.addEventListener("click", turnOffAllWeights);
-  els.resetWeightsButton.addEventListener("click", resetWeights);
   els.runSortButton.addEventListener("click", runSort);
   els.sortAgainButton.addEventListener("click", runSort);
   els.exportButton.addEventListener("click", exportTeams);
@@ -150,8 +143,6 @@ function bindEvents() {
   els.explainToggle.addEventListener("click", () => togglePanel(els.explainToggle.closest(".explain-card"), els.explainToggle));
   els.studentForm.addEventListener("submit", saveStudent);
   els.rosterBody.addEventListener("click", handleRosterAction);
-  els.weightsList.addEventListener("input", handleWeightChange);
-  els.weightsList.addEventListener("change", handleWeightChange);
   els.workedExampleStudent.addEventListener("change", renderWorkedExample);
   document.querySelectorAll('input[name="sortMode"]').forEach((input) => input.addEventListener("change", handleSortModeChange));
   [els.teamAList, els.teamBList].forEach(bindDropZone);
@@ -172,7 +163,6 @@ function showLandingPage(event) {
 function renderAll() {
   normalizeState();
   renderRoster();
-  renderWeights();
   renderPreview();
   renderScoringStatus();
   renderWorkedExample();
@@ -183,17 +173,13 @@ function renderAll() {
 
 function normalizeState() {
   state.students ||= [];
-  state.weights ||= {};
   state.datasetLabel ||= "Local roster";
   state.sortMode ||= "balanced";
-  SIGNAL_DEFINITIONS.forEach((signal) => {
-    const setting = state.weights[signal.key] || {};
-    const rawAxis = Number(setting.axis);
-    const rawInfluence = Number(setting.influence);
-    const axis = Number.isFinite(rawAxis) ? Math.round(clamp(rawAxis, -3, 3) * 10) / 10 : signal.axis;
-    const influence = [0, 1, 2, 3].includes(rawInfluence) ? rawInfluence : 0;
-    state.weights[signal.key] = { axis, influence };
-  });
+  if (Object.prototype.hasOwnProperty.call(state, "weights")) {
+    delete state.weights;
+    state.teams = null;
+    state.decisionLog = [];
+  }
 }
 
 function showView(name) {
@@ -228,30 +214,6 @@ function rosterRow(student) {
   </tr>`;
 }
 
-function renderWeights() {
-  const renderRows = (signals) => signals.map((signal) => {
-    const setting = state.weights[signal.key];
-    const isBaseline = setting.influence === 0;
-    const displayedAxis = isBaseline ? signal.axis : setting.axis;
-    return `<div class="weight-row" data-key="${signal.key}">
-      <div class="weight-name"><strong>${escapeHtml(signal.label)}</strong><small>${escapeHtml(signal.category)}${isBaseline ? " · built-in position" : ""}</small></div>
-      <div class="axis-control" style="--thumb:${axisColor(displayedAxis)}">
-        <input aria-label="${escapeHtml(signal.label)} ${isBaseline ? "built-in baseline" : "instructor"} position" data-setting="axis" type="range" min="-3" max="3" step="0.1" value="${displayedAxis}" ${isBaseline ? "disabled" : ""} />
-        <div class="ticks"><span>−3</span><span>0</span><span>+3</span></div>
-      </div>
-      <div class="influence-control">
-        <select aria-label="${escapeHtml(signal.label)} influence" data-setting="influence">
-          <option value="0" ${setting.influence === 0 ? "selected" : ""}>Baseline · no adjustment</option>
-          <option value="1" ${setting.influence === 1 ? "selected" : ""}>1× light</option>
-          <option value="2" ${setting.influence === 2 ? "selected" : ""}>2× medium</option>
-          <option value="3" ${setting.influence === 3 ? "selected" : ""}>3× strong</option>
-        </select>
-      </div>
-    </div>`;
-  }).join("");
-  els.weightsList.innerHTML = `<div class="weight-section-label"><span>Tool familiarity</span><small>22 fixed questionnaire rows</small></div>${renderRows(TOOL_DEFINITIONS)}<div class="weight-section-label"><span>Professional or academic experience</span><small>Fixed-choice question</small></div>${renderRows(AREA_DEFINITIONS)}`;
-}
-
 function renderPreview() {
   const scored = state.students.map((student) => ({ student, ...scoreStudent(student) }));
   const layout = buildPreviewLayout(scored);
@@ -265,47 +227,13 @@ function renderPreview() {
 }
 
 function getScoringStatus() {
-  const activeInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => Number(state.weights[signal.key]?.influence) > 0).length;
-  const baselineSignals = SIGNAL_DEFINITIONS.length - activeInstructorSignals;
-  const directionalInstructorSignals = SIGNAL_DEFINITIONS.filter((signal) => Number(state.weights[signal.key]?.influence) > 0 && Math.abs(resolveEffectiveSetting(signal, state.weights).axis) > 0.0001).length;
-  const fixedEvidenceStudents = state.students.filter((student) => (
-    student.directPosition != null || ACTIVITY_SIGNALS.some((signal) => Number(student.activities?.[signal.key]) > 0)
-  )).length;
-  const allOff = activeInstructorSignals === 0;
   const balanced = state.sortMode === "balanced";
-
-  if (allOff) {
-    return {
-      allOff,
-      neutral: false,
-      title: "No instructor adjustments—baseline questionnaire mapping is active",
-      description: balanced
-        ? "Student tool and professional-area answers use their built-in hardware–software direction at 1×. Recent activities and manual direct-position signals keep their fixed rules; the Hat balances position, confidence, experience, and cohort size."
-        : "Student tool and professional-area answers use their built-in hardware–software direction at 1×. Recent activities and manual direct-position signals keep their fixed rules before the ranked 50/50 split.",
-      details: [`${SIGNAL_DEFINITIONS.length} baseline mappings`, `${fixedEvidenceStudents} students with fixed evidence`, balanced ? "Position + confidence balance" : "Ranked median split"]
-    };
-  }
-
-  if (directionalInstructorSignals === 0) {
-    return {
-      allOff,
-      neutral: true,
-      title: "Enabled instructor adjustments are neutral—confidence only",
-      description: balanced
-        ? `The ${activeInstructorSignals} enabled overrides use axis 0, so they build confidence without pulling position. ${baselineSignals ? `The other ${baselineSignals} questionnaire rows retain their built-in direction at 1×. ` : ""}Fixed activities and manual signals are unchanged; the Hat also balances experience and cohort size.`
-        : `The ${activeInstructorSignals} enabled overrides use axis 0, so they build confidence without pulling position. ${baselineSignals ? `The other ${baselineSignals} questionnaire rows retain their built-in direction at 1×. ` : ""}Fixed activities and manual signals are unchanged before the ranked split.`,
-      details: [`${activeInstructorSignals} neutral overrides`, `${baselineSignals} baseline mappings`, balanced ? "Position + confidence balance" : "Ranked median split"]
-    };
-  }
-
   return {
-    allOff,
-    neutral: false,
-    title: `${activeInstructorSignals} instructor adjustments, ${baselineSignals} baseline mappings`,
+    title: "Student responses drive a fixed scoring model",
     description: balanced
-      ? "Enabled instructor settings override their questionnaire rows; every row without an adjustment falls back to its built-in direction at 1×. Neutral overrides build confidence only. Fixed activities and manual signals are unchanged; the Hat also balances experience and cohort size."
-      : "Enabled instructor settings override their questionnaire rows; every row without an adjustment falls back to its built-in direction at 1×. Neutral overrides build confidence only, and fixed activities and manual signals are unchanged before the ranked split.",
-    details: [`${directionalInstructorSignals} directional overrides`, `${baselineSignals} baseline mappings`, balanced ? "Position + confidence balance" : "Ranked median split"]
+      ? "Tool familiarity and professional-area answers use fixed built-in hardware–software directions at equal 1×. Recent activities use 0.65 and manual placement keeps its fixed rule. The Hat then balances position, confidence, experience, and cohort size."
+      : "Tool familiarity and professional-area answers use fixed built-in hardware–software directions at equal 1×. Recent activities use 0.65 and manual placement keeps its fixed rule before the ranked 50/50 split.",
+    details: [`${SIGNAL_DEFINITIONS.length} fixed mappings`, "Equal 1× questionnaire evidence", balanced ? "Position + confidence balance" : "Ranked median split"]
   };
 }
 
@@ -314,9 +242,7 @@ function renderScoringStatus() {
   const signature = JSON.stringify(status);
   if (els.scoringStatus.dataset.signature === signature) return;
   els.scoringStatus.dataset.signature = signature;
-  els.scoringStatus.classList.toggle("is-baseline", status.allOff);
-  els.scoringStatus.classList.toggle("is-neutral", status.neutral);
-  els.scoringStatus.innerHTML = `<span class="scoring-status-icon" aria-hidden="true">${status.allOff ? "↺" : status.neutral ? "↔" : "✓"}</span><div class="scoring-status-copy"><p>What drives this sort</p><h3>${escapeHtml(status.title)}</h3><p>${escapeHtml(status.description)}</p></div><div class="scoring-status-details">${status.details.map((detail) => `<span>${escapeHtml(detail)}</span>`).join("")}</div>`;
+  els.scoringStatus.innerHTML = `<span class="scoring-status-icon" aria-hidden="true">✓</span><div class="scoring-status-copy"><p>What drives this sort</p><h3>${escapeHtml(status.title)}</h3><p>${escapeHtml(status.description)}</p></div><div class="scoring-status-details">${status.details.map((detail) => `<span>${escapeHtml(detail)}</span>`).join("")}</div>`;
 }
 
 function renderWorkedExample() {
@@ -326,12 +252,12 @@ function renderWorkedExample() {
   els.workedExampleStudent.innerHTML = selectedStudent
     ? state.students.map((student) => `<option value="${escapeHtml(student.id)}" ${student.id === selectedStudent.id ? "selected" : ""}>${escapeHtml(student.name)}</option>`).join("")
     : '<option value="">No students loaded</option>';
-  els.workedExampleBody.innerHTML = renderWorkedExampleModel(buildWorkedExampleModel(selectedStudent, state.weights));
+  els.workedExampleBody.innerHTML = renderWorkedExampleModel(buildWorkedExampleModel(selectedStudent));
 }
 
-function buildWorkedExampleModel(student, weights) {
+function buildWorkedExampleModel(student) {
   if (!student) return { empty: true, message: "Import a roster or add a student to see a worked placement example." };
-  const breakdown = calculateScoreBreakdown(student, weights);
+  const breakdown = calculateScoreBreakdown(student);
   return {
     empty: false,
     studentName: student.name,
@@ -362,7 +288,7 @@ function renderWorkedExampleModel(model) {
     <div class="worked-example-result">
       <div><small>Position arithmetic</small><code>${escapeHtml(positionMath)}</code></div>
       <div><small>Final placement</small><strong>${formatNumber(model.position)} / 100 · ${capitalize(model.band)}</strong><span>${escapeHtml(formatPosition(model.position))}</span></div>
-      <div><small>Response confidence</small><code>${escapeHtml(confidenceText)}</code>${model.confidenceUnavailable ? "" : "<span>Possible evidence includes every tool at 3 × its effective influence—even when blank or unfamiliar—and each selected area at 2 × its effective influence.</span>"}</div>
+      <div><small>Response confidence</small><code>${escapeHtml(confidenceText)}</code>${model.confidenceUnavailable ? "" : "<span>Possible evidence includes every tool at 3 points—even when blank or unfamiliar—and each selected area at 2 points.</span>"}</div>
     </div>`;
 }
 
@@ -394,7 +320,7 @@ function renderResults() {
   els.balanceKicker.textContent = splitMode ? "COHORT SPLIT" : "BALANCE SCORE";
   els.balanceDenominator.textContent = splitMode ? "students" : "/ 100";
   els.balanceScoreBadge.classList.toggle("is-split", splitMode);
-  els.dragHint.textContent = splitMode ? "Drag to override the median split. Cohort counts and centers update instantly." : "Drag a student between cohorts to challenge the algorithm. The balance score updates instantly.";
+  els.dragHint.textContent = splitMode ? "Drag to change the median split. Cohort counts and centers update instantly." : "Drag a student between cohorts to challenge the algorithm. The balance score updates instantly.";
   if (!state.teams) {
     els.balanceScore.textContent = "—";
     els.balanceTitle.textContent = splitMode ? "Waiting for a median split" : "Waiting for a sort";
@@ -453,7 +379,7 @@ function renderSortMap(cohortA, cohortB) {
     els.sortMapCut.hidden = true;
     els.sortMapStudents.innerHTML = "";
     els.sortMapChart.style.setProperty("--chart-height", "250px");
-    els.sortMapNote.textContent = "Each name will be positioned by its effective questionnaire score: instructor override or built-in baseline per signal.";
+    els.sortMapNote.textContent = "Each name will be positioned by student responses using the fixed built-in signal mappings.";
     return;
   }
 
@@ -486,11 +412,11 @@ function renderSortMap(cohortA, cohortB) {
     els.sortMapSummary.textContent = separateCut
       ? `The class median is ${median.toFixed(1)}; the cohort cut at ${cohortCut.toFixed(1)} falls between the two ranked groups.`
       : `The class median and cohort cut meet at ${median.toFixed(1)}. Manual moves remain visible across the line.`;
-    els.sortMapNote.textContent = `Names are positioned by effective questionnaire score. The ranked cut creates approximately equal cohorts—even when the class has more signals on one side.`;
+    els.sortMapNote.textContent = `Names are positioned by their data-derived questionnaire score. The ranked cut creates approximately equal cohorts—even when the class has more signals on one side.`;
   } else {
     els.sortMapTitle.textContent = "How the cohorts overlap";
     els.sortMapSummary.textContent = `The class median is ${median.toFixed(1)}. A balanced result mixes both cohort colors across the skill-signal spectrum.`;
-    els.sortMapNote.textContent = "Names are positioned by effective questionnaire score. Color shows cohort assignment, not a student's discipline or course path.";
+    els.sortMapNote.textContent = "Names are positioned by their data-derived questionnaire score. Color shows cohort assignment, not a student's discipline or course path.";
   }
 }
 
@@ -542,7 +468,7 @@ function renderTeam(name, students) {
 function renderDecisionLog() {
   const fallback = [
     "<strong>Translate:</strong> familiarity answers become 0–3 evidence points.",
-    "<strong>Position:</strong> each answer uses its enabled instructor override, or its built-in axis at 1× when no adjustment is set.",
+    "<strong>Position:</strong> each questionnaire answer uses its fixed built-in axis at equal 1×.",
     "<strong>Balance:</strong> the hat searches for equal-size cohorts with similar hardware, software, and experience totals."
   ];
   els.decisionLog.innerHTML = (state.decisionLog.length ? state.decisionLog : fallback).map((entry) => `<li>${entry}</li>`).join("");
@@ -563,21 +489,7 @@ function handleSortModeChange(event) {
   saveState();
 }
 
-function resolveEffectiveSetting(definition, weights) {
-  const instructorSetting = weights?.[definition.key];
-  const instructorInfluence = Number(instructorSetting?.influence);
-  if (!(instructorInfluence > 0)) {
-    return { axis: definition.axis, influence: 1, isBaseline: true };
-  }
-  const instructorAxis = Number(instructorSetting.axis);
-  return {
-    axis: Number.isFinite(instructorAxis) ? instructorAxis : definition.axis,
-    influence: instructorInfluence,
-    isBaseline: false
-  };
-}
-
-function calculateScoreBreakdown(student, weights, includeContributions = true) {
+function calculateScoreBreakdown(student, includeContributions = true) {
   let signed = 0;
   let directionalEvidence = 0;
   let allEvidence = 0;
@@ -586,32 +498,30 @@ function calculateScoreBreakdown(student, weights, includeContributions = true) 
   let software = 0;
   const contributions = includeContributions ? [] : null;
   TOOL_DEFINITIONS.forEach((tool) => {
-    const setting = resolveEffectiveSetting(tool, weights);
     const response = clamp(Number(student.skills?.[tool.key]) || 0, 0, 4);
     const evidence = response ? response - 1 : 0;
-    const signedContribution = evidence * setting.axis * setting.influence;
-    const directionalContribution = evidence * Math.abs(setting.axis) * setting.influence;
+    const signedContribution = evidence * tool.axis;
+    const directionalContribution = evidence * Math.abs(tool.axis);
     signed += signedContribution;
     directionalEvidence += directionalContribution;
-    allEvidence += evidence * setting.influence;
-    possibleEvidence += 3 * setting.influence;
-    if (setting.axis < 0) hardware += evidence * Math.abs(setting.axis) * setting.influence;
-    if (setting.axis > 0) software += evidence * setting.axis * setting.influence;
-    if (includeContributions && evidence) contributions.push({ label: tool.label, context: `Tool response ${response} → evidence ${evidence}; ${setting.isBaseline ? "baseline mapping at 1×" : `instructor override at ${formatNumber(setting.influence)}×`}${setting.axis === 0 ? "; neutral axis adds confidence only" : ""}`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(setting.axis)} × ${formatNumber(setting.influence)}`, signed: signedContribution, directional: directionalContribution });
+    allEvidence += evidence;
+    possibleEvidence += 3;
+    if (tool.axis < 0) hardware += evidence * Math.abs(tool.axis);
+    if (tool.axis > 0) software += evidence * tool.axis;
+    if (includeContributions && evidence) contributions.push({ label: tool.label, context: `Tool response ${response} → evidence ${evidence}; fixed built-in axis at equal 1×`, signedFormula: `${formatNumber(evidence)} × ${formatNumber(tool.axis)}`, signed: signedContribution, directional: directionalContribution });
   });
   AREA_DEFINITIONS.forEach((area) => {
     if (!student.areas?.includes(area.key)) return;
-    const setting = resolveEffectiveSetting(area, weights);
     const evidence = 2;
-    const signedContribution = evidence * setting.axis * setting.influence;
-    const directionalContribution = evidence * Math.abs(setting.axis) * setting.influence;
+    const signedContribution = evidence * area.axis;
+    const directionalContribution = evidence * Math.abs(area.axis);
     signed += signedContribution;
     directionalEvidence += directionalContribution;
-    allEvidence += evidence * setting.influence;
-    possibleEvidence += 2 * setting.influence;
-    if (setting.axis < 0) hardware += evidence * Math.abs(setting.axis) * setting.influence;
-    if (setting.axis > 0) software += evidence * setting.axis * setting.influence;
-    if (includeContributions) contributions.push({ label: area.label, context: `Selected area → fixed evidence 2; ${setting.isBaseline ? "baseline mapping at 1×" : `instructor override at ${formatNumber(setting.influence)}×`}${setting.axis === 0 ? "; neutral axis adds confidence only" : ""}`, signedFormula: `2 × ${formatNumber(setting.axis)} × ${formatNumber(setting.influence)}`, signed: signedContribution, directional: directionalContribution });
+    allEvidence += evidence;
+    possibleEvidence += 2;
+    if (area.axis < 0) hardware += evidence * Math.abs(area.axis);
+    if (area.axis > 0) software += evidence * area.axis;
+    if (includeContributions) contributions.push({ label: area.label, context: "Selected area → fixed evidence 2; fixed built-in axis at equal 1×", signedFormula: `2 × ${formatNumber(area.axis)}`, signed: signedContribution, directional: directionalContribution });
   });
   ACTIVITY_SIGNALS.forEach((signal) => {
     const evidence = clamp(Number(student.activities?.[signal.key]) || 0, 0, 3);
@@ -639,23 +549,21 @@ function calculateScoreBreakdown(student, weights, includeContributions = true) 
 }
 
 function scoreStudent(student) {
-  return calculateScoreBreakdown(student, state.weights, false);
+  return calculateScoreBreakdown(student, false);
 }
 
 function strongestEvidence(student) {
   const toolEvidence = TOOL_DEFINITIONS.map((tool) => ({
     label: tool.label.replace(/ \(.+\)/, ""),
     value: Math.max(0, (Number(student.skills?.[tool.key]) || 0) - 1),
-    impact: Math.max(0, (Number(student.skills?.[tool.key]) || 0) - 1) * resolveEffectiveSetting(tool, state.weights).influence
   }));
   const areaEvidence = AREA_DEFINITIONS.filter((area) => student.areas?.includes(area.key)).map((area) => ({
     label: area.label,
     value: 2,
-    impact: 2 * resolveEffectiveSetting(area, state.weights).influence
   }));
   return [...toolEvidence, ...areaEvidence]
     .filter((item) => item.value > 0)
-    .sort((a, b) => b.impact - a.impact || b.value - a.value || a.label.localeCompare(b.label));
+    .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
 }
 
 function runSort(navigate = true) {
@@ -712,17 +620,15 @@ function runSort(navigate = true) {
   }
   state.teams = { A: A.map((student) => student.id), B: B.map((student) => student.id) };
   const finalBalance = calculateBalance(A, B);
-  const hardwareTools = SIGNAL_DEFINITIONS.filter((signal) => resolveEffectiveSetting(signal, state.weights).axis < -1).length;
-  const softwareTools = SIGNAL_DEFINITIONS.filter((signal) => resolveEffectiveSetting(signal, state.weights).axis > 1).length;
-  const instructorAdjustments = SIGNAL_DEFINITIONS.filter((signal) => state.weights[signal.key].influence > 0).length;
-  const baselineMappings = SIGNAL_DEFINITIONS.length - instructorAdjustments;
+  const hardwareSignals = SIGNAL_DEFINITIONS.filter((signal) => signal.axis < -1).length;
+  const softwareSignals = SIGNAL_DEFINITIONS.filter((signal) => signal.axis > 1).length;
   if (state.sortMode === "split") {
     const aPositions = A.map((student) => scoreStudent(student).position);
     const bPositions = B.map((student) => scoreStudent(student).position);
     const cutPoint = (Math.max(...aPositions) + Math.min(...bPositions)) / 2;
     state.decisionLog = [
       `<strong>Translated ${state.students.length} responses.</strong> Each student received one continuous Hardware ⇄ Software position.`,
-      `<strong>Ranked the whole room.</strong> Students were ordered from the lowest to highest effective position; fixed Hardware, Bridge, and Software labels did not control the order.`,
+      `<strong>Ranked the whole room.</strong> Students were ordered from the lowest to highest data-derived position; fixed Hardware, Bridge, and Software labels did not control the order.`,
       `<strong>Cut between the ranked groups at ${cutPoint.toFixed(1)}.</strong> The lower ${A.length} positions became ${COHORT_NAMES.A} and the upper ${B.length} became ${COHORT_NAMES.B}.`,
       `<strong>Guaranteed an approximate 50/50 split.</strong> This median method stays ${A.length}/${B.length} even when far more students cross the absolute Software signal threshold.`,
       `<strong>Kept course pathways separate from skill labels.</strong> Cohort names do not prescribe a discipline; both cohorts complete Physical Computing and Computational Design.`
@@ -730,7 +636,7 @@ function runSort(navigate = true) {
   } else {
     state.decisionLog = [
       `<strong>Translated ${state.students.length} responses.</strong> Blank answers contributed no evidence; familiarity levels contributed 0–3 points.`,
-      `<strong>Applied the effective model.</strong> ${instructorAdjustments} instructor adjustment${instructorAdjustments === 1 ? "" : "s"} and ${baselineMappings} built-in baseline mapping${baselineMappings === 1 ? "" : "s"} were used; ${hardwareTools} signals lean hardware and ${softwareTools} lean software.`,
+      `<strong>Applied the fixed model.</strong> Every questionnaire signal counted equally at 1× using its built-in axis; ${hardwareSignals} signals lean hardware and ${softwareSignals} lean software.`,
       `<strong>Seeded the cohorts.</strong> Students furthest from the class midpoint were placed first so rare strengths were distributed early.`,
       `<strong>Tested local swaps.</strong> The hat made ${swaps} improving swap${swaps === 1 ? "" : "s"} across ${passes} pass${passes === 1 ? "" : "es"}, minimizing hardware, software, experience, and size gaps.`,
       `<strong>Stopped at ${finalBalance.score}/100.</strong> A higher score means the two cohorts have more similar skill totals—not that either cohort is “better.”`
@@ -771,62 +677,6 @@ function calculateBalance(teamA, teamB) {
 function normalizedDifference(a, b) {
   const scale = Math.max(a, b, 1);
   return Math.abs(a - b) / scale;
-}
-
-function handleWeightChange(event) {
-  const row = event.target.closest(".weight-row");
-  if (!row || !event.target.dataset.setting) return;
-  const key = row.dataset.key;
-  const setting = event.target.dataset.setting;
-  state.weights[key][setting] = Number(event.target.value);
-  const signal = SIGNAL_DEFINITIONS.find((item) => item.key === key);
-  const axisInput = row.querySelector('.axis-control input[data-setting="axis"]');
-  const baseline = state.weights[key].influence === 0;
-  const displayedAxis = baseline ? signal.axis : state.weights[key].axis;
-  axisInput.disabled = baseline;
-  axisInput.value = displayedAxis;
-  axisInput.setAttribute("aria-label", `${signal.label} ${baseline ? "built-in baseline" : "instructor"} position`);
-  row.querySelector(".weight-name small").textContent = `${signal.category}${baseline ? " · built-in position" : ""}`;
-  row.querySelector(".axis-control").style.setProperty("--thumb", axisColor(displayedAxis));
-  state.teams = null;
-  renderRoster();
-  renderPreview();
-  renderWorkedExample();
-  renderScoringStatus();
-  renderResults();
-  saveState();
-}
-
-function resetWeights() {
-  state.weights = createNeutralWeights();
-  state.teams = null;
-  state.decisionLog = [];
-  renderWeights();
-  renderRoster();
-  renderPreview();
-  renderScoringStatus();
-  renderWorkedExample();
-  renderResults();
-  saveState();
-  showToast("All instructor settings reset to neutral at 1× light.");
-}
-
-function createNeutralWeights() {
-  return Object.fromEntries(SIGNAL_DEFINITIONS.map((signal) => [signal.key, { axis: 0, influence: 1 }]));
-}
-
-function turnOffAllWeights() {
-  SIGNAL_DEFINITIONS.forEach((signal) => { state.weights[signal.key].influence = 0; });
-  state.teams = null;
-  state.decisionLog = [];
-  renderWeights();
-  renderRoster();
-  renderPreview();
-  renderScoringStatus();
-  renderWorkedExample();
-  renderResults();
-  saveState();
-  showToast("Baseline questionnaire mapping is active with no instructor adjustments.");
 }
 
 function openStudentDialog(student = null) {
@@ -1029,7 +879,7 @@ function bindDropZone(zone) {
     if (!id || source === target) return;
     state.teams[source] = state.teams[source].filter((studentId) => studentId !== id);
     state.teams[target].push(id);
-    state.decisionLog.push(`<strong>Instructor adjustment:</strong> ${escapeHtml(findStudent(id)?.name || "A student")} moved from ${COHORT_NAMES[source]} to ${COHORT_NAMES[target]}; the displayed metrics were recalculated.`);
+    state.decisionLog.push(`<strong>Manual move:</strong> ${escapeHtml(findStudent(id)?.name || "A student")} moved from ${COHORT_NAMES[source]} to ${COHORT_NAMES[target]}; the displayed metrics were recalculated.`);
     saveState();
     renderResults();
   });
@@ -1064,9 +914,9 @@ function loadSampleRoster() {
 }
 
 function restartSession() {
-  const approved = window.confirm("Start a new session? This clears the local roster and restores the default scoring model.");
+  const approved = window.confirm("Start a new session? This clears the local roster and starts with the fixed scoring model.");
   if (!approved) return;
-  state = { students: structuredClone(COURSE_STUDENTS), weights: structuredClone(DEFAULT_WEIGHTS), datasetLabel: COURSE_DATASET_LABEL, sortMode: "balanced", teams: null, decisionLog: [] };
+  state = { students: structuredClone(COURSE_STUDENTS), datasetLabel: COURSE_DATASET_LABEL, sortMode: "balanced", teams: null, decisionLog: [] };
   renderAll();
   showView("roster");
   showToast("New session started.");

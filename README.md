@@ -1,21 +1,12 @@
 # Sorting Hat
 
-A local-first, static teaching app for DES INV 202. It imports questionnaire responses, maps tool familiarity onto a visible hardware-to-software skill spectrum, and creates two student cohorts while showing its scoring assumptions and decision trail.
+Sorting Hat is a local-first, static teaching app for DES INV 202. It imports questionnaire responses, places each student on a visible hardware-to-software skill line, and forms two cohorts. Both cohorts complete both quarter-semester modules: Physical Computing and Computational Design. Hardware, Bridge, and Software are scoring signals, not student tracks or cohort names.
 
-Both cohorts complete both quarter-semester modules:
-
-- **Physical Computing:** hardware and computation, producing physical artifacts and things.
-- **Computational Design:** software, AI, and simulations without producing physical artifacts.
-
-Hardware, Bridge, and Software describe skill signals only. They are not cohort names, student identities, or separate educational tracks.
-
-The two cohort names are **Hufflestuff** and **Ravenworks**. These playful names are independent of module order and skill orientation.
-
-The published app contains no student roster. Instructors import a Google Forms CSV during class; the browser processes and stores the selected data locally without uploading it to a server. The refresh button beside roster search loads a fictional demonstration roster.
+The app has no published roster. During class, an instructor imports a Google Forms CSV; the browser processes it locally and stores the session in browser local storage. The refresh control beside roster search loads a fictional demonstration roster.
 
 ## Run it
 
-On Windows, double-click `start-sortinghat.bat`. You can also open `index.html` directly, or from this directory run:
+On Windows, double-click `start-sortinghat.bat`. You can also open `index.html` directly, or serve this directory with Python 3:
 
 ```bash
 python3 -m http.server 8080
@@ -29,28 +20,21 @@ Run the dependency-free smoke test with:
 node test/smoke.test.js
 ```
 
-## CSV input
+## CSV input and privacy
 
-Export responses from Google Forms as CSV. The importer recognizes:
+Export the Google Forms responses as CSV. The importer recognizes preferred name, pronouns, professional experience, the tool-familiarity grid, professional or academic areas, and recent GitHub, microcontroller, CAD, and generative-AI activity. Other fields are ignored. State remains in the current browser; it is never uploaded by this static app.
 
-- Preferred name, pronouns, and professional experience
-- The tool-familiarity grid from the supplied DES INV 202 questionnaire
-- Recent activity involving GitHub, microcontrollers, CAD, and generative AI
+## Scoring and cohort strategies
 
-Unrecognized questionnaire fields remain private and are ignored. All app state stays in browser local storage.
+There are no instructor weighting controls. Tool and selected-area responses use their fixed built-in hardware/software axes at equal 1×. A tool response becomes 0–3 evidence points; a selected area contributes 2. Recent activity uses its fixed axis and a 0.65 multiplier. An optional manual direct-position response uses a separate fixed rule.
 
-## GitHub Pages deployment
+Page 2 provides a live, student-specific worked example with every contribution, the signed numerator, directional denominator, placement, and response confidence. Choose either:
 
-This repository has no deployment workflow. Because the app is static, it can be published with any GitHub Pages configuration that serves this directory’s static files.
+- **Balanced cohorts** — distributes the room to reduce gaps in position, hardware and software evidence, confidence, experience, and avoidable size.
+- **Skill-spectrum split** — ranks the room on the line and divides it approximately 50/50.
 
-The `.gitignore` excludes questionnaire CSV files, local roster files, and screenshots. Check `git status` before every push and never force-add files from `data/`.
+See [the scoring architecture](docs/architecture.md#scoring-and-sorting) for the fixed mappings and formulas, and [development notes](docs/development.md) for verification and local-state details.
 
-## Scoring model
+## Deployment and data safety
 
-Each familiarity answer becomes 0–3 evidence points. Fixed professional/academic area choices contribute background evidence. Every response keeps its built-in hardware-to-software mapping at 1× unless the instructor enables an override for that row. An enabled override supplies its own axis (−3 hardware to +3 software) and influence (1×–3×); a neutral override (axis 0) adds response confidence without moving position. Blank answers contribute no evidence.
-
-Page 2 includes a live worked example for a selected student, showing every included contribution, the numerator and directional denominator, final position, and confidence calculation. **Reset to neutral · 1× light** sets every instructor axis to 0 and every instructor influence to 1× light. It does not restore the curated first-run model; **Start new session** clears the roster and restores that model.
-
-**Use baseline · no instructor adjustments** turns off overrides, not student evidence: tool and professional-area responses use their built-in axes at 1×. Recent activity and optional manual self-described practice remain fixed signals. The Scoring page identifies all-baseline, neutral-override, and mixed settings, and the worked example labels each questionnaire row as a baseline mapping or instructor override. See [the scoring architecture](docs/architecture.md#scoring-and-sorting) for formulas and persistence details.
-
-Balanced cohorts distribute the strongest orientations first and improve the result with swaps that reduce differences in size, orientation, hardware and software evidence, confidence, and professional experience. A skill-spectrum split ranks the roster by position, then confidence, then name, and divides it at the median for an approximately 50/50 split. Both cohorts complete both modules.
+The project is static and has no deployment workflow; it can be served by a GitHub Pages configuration that publishes this directory. The `.gitignore` excludes questionnaire CSV files, local roster files, and captures that may include student data. Check `git status` before pushing and do not force-add files from `data/`.

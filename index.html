@@ -70,7 +70,7 @@
           <aside class="signal-key" aria-labelledby="signalKeyTitle">
             <div class="signal-key-title">
               <span aria-hidden="true">↔</span>
-              <div><strong id="signalKeyTitle">How to read the signal</strong><small>Position on the weighted 0–100 spectrum</small></div>
+              <div><strong id="signalKeyTitle">How to read the signal</strong><small>Position on the fixed 0–100 skill spectrum</small></div>
             </div>
             <div class="signal-key-item signal-key-item--hardware">
               <span class="signal-badge hardware">← Hardware</span>
@@ -128,12 +128,8 @@
           <div class="section-heading">
             <div>
               <p class="section-kicker">02 · SCORING</p>
-              <h2 id="scoringTitle">Teach the Hat what matters</h2>
-              <p>Place each questionnaire signal on the spectrum and choose its influence.</p>
-            </div>
-            <div class="section-actions">
-              <button class="button button--quiet" id="turnOffWeightsButton" type="button">Use baseline · no instructor adjustments</button>
-              <button class="button button--secondary" id="resetWeightsButton" type="button">Reset to neutral · 1× light</button>
+              <h2 id="scoringTitle">See how the data places the room</h2>
+              <p>Student responses use fixed signal mappings to build a transparent hardware–software position.</p>
             </div>
           </div>
 
@@ -142,7 +138,7 @@
             <b aria-hidden="true">→</b>
             <div><span>2</span><p><strong>Position</strong>Signals lean hardware, bridge, or software.</p></div>
             <b aria-hidden="true">→</b>
-            <div><span>3</span><p><strong>Balance</strong>Two equal cohorts minimize skill gaps.</p></div>
+            <div><span>3</span><p><strong>Sort</strong>Build balanced cohorts or split the skill spectrum.</p></div>
           </div>
 
           <section class="rotation-context" aria-labelledby="rotationTitle">
@@ -161,10 +157,10 @@
               </button>
               <div id="formulaContent">
                 <code>evidence = tool response − 1 (0 for blank/unfamiliar); selected area = 2</code>
-                <code>effective setting = instructor override, or built-in axis at 1× when no adjustment is set</code>
-                <code>normalized = Σ(evidence × axis × influence) ÷ Σ(evidence × |axis| × influence)</code>
+                <code>questionnaire: signed = evidence × axis; directional = evidence × |axis|</code>
+                <code>normalized = Σ(signed contribution) ÷ Σ(directional contribution)</code>
                 <code>position = 50 + (normalized × 50)</code>
-                <p>Blank and unfamiliar answers add no evidence. A neutral-axis instructor override builds confidence without pulling position. Baseline questionnaire mappings remain active at 1×; recent activities use their fixed 0.65 multiplier and a manual direct-position signal uses its fixed rule.</p>
+                <p>Blank and unfamiliar answers add no evidence. Every tool and selected professional area uses its fixed built-in axis at equal 1×. Recent activities use their fixed 0.65 multiplier, and a manual direct-position signal uses its fixed rule.</p>
               </div>
             </div>
             <fieldset class="sort-mode-card">
@@ -187,7 +183,7 @@
               <div>
                 <p class="section-kicker">WORKED EXAMPLE</p>
                 <h3 id="workedExampleTitle">Follow one student onto the line</h3>
-                <p>Change a weight above and the arithmetic below updates with the live score.</p>
+                <p>Select a student to see how their responses become a live score.</p>
               </div>
               <label for="workedExampleStudent">Student
                 <select id="workedExampleStudent" aria-controls="workedExampleBody"></select>
@@ -196,37 +192,24 @@
             <div id="workedExampleBody" class="worked-example-body"></div>
           </section>
 
-          <div class="scoring-layout">
-            <div class="weights-card">
-              <div class="weights-header">
-                <div>
-                  <h3>Question weights</h3>
-                  <p>Move a dot to teach the class how assumptions enter the model.</p>
-                </div>
-                <div class="axis-key" aria-hidden="true"><span>HARDWARE</span><i></i><span>SOFTWARE</span></div>
-              </div>
-              <div id="weightsList" class="weights-list"></div>
+          <aside class="score-preview">
+            <p class="section-kicker">LIVE PREVIEW</p>
+            <h3>The room, on one line</h3>
+            <div class="spectrum" id="previewSpectrum">
+              <div class="spectrum-line"></div>
+              <span class="spectrum-label spectrum-label--left">Hardware</span>
+              <span class="spectrum-label spectrum-label--center">Bridge</span>
+              <span class="spectrum-label spectrum-label--right">Software</span>
+              <div id="previewDots"></div>
             </div>
-
-            <aside class="score-preview">
-              <p class="section-kicker">LIVE PREVIEW</p>
-              <h3>The room, on one line</h3>
-              <div class="spectrum" id="previewSpectrum">
-                <div class="spectrum-line"></div>
-                <span class="spectrum-label spectrum-label--left">Hardware</span>
-                <span class="spectrum-label spectrum-label--center">Bridge</span>
-                <span class="spectrum-label spectrum-label--right">Software</span>
-                <div id="previewDots"></div>
-              </div>
-              <div class="preview-stat-grid">
-                <div><small>Class center</small><strong id="classCenter">—</strong></div>
-                <div><small>Average confidence</small><strong id="classConfidence">—</strong></div>
-              </div>
-              <button class="button button--dark button--wide" id="runSortButton" type="button">
-                <span id="sortButtonLabel">Build balanced cohorts</span><span aria-hidden="true">✦</span>
-              </button>
-            </aside>
-          </div>
+            <div class="preview-stat-grid">
+              <div><small>Class center</small><strong id="classCenter">—</strong></div>
+              <div><small>Average confidence</small><strong id="classConfidence">—</strong></div>
+            </div>
+            <button class="button button--dark button--wide" id="runSortButton" type="button">
+              <span id="sortButtonLabel">Build balanced cohorts</span><span aria-hidden="true">✦</span>
+            </button>
+          </aside>
         </section>
 
         <section class="view" id="view-results" aria-labelledby="resultsTitle">
@@ -274,7 +257,7 @@
               </div>
               <div class="sort-map-axis-labels"><span>0 · Hardware signals</span><span>Bridge</span><span>Software signals · 100</span></div>
             </div>
-            <footer id="sortMapNote">Each name will be positioned by its effective questionnaire score: instructor override or built-in baseline per signal.</footer>
+            <footer id="sortMapNote">Each name will be positioned by student responses using the fixed built-in signal mappings.</footer>
           </section>
 
           <div class="teams-grid">
