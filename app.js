@@ -225,14 +225,14 @@ function renderRoster() {
 }
 
 function rosterRow(student) {
-  const score = scoreStudent(student);
+  const score = scoreStudentRaw(student);
   const evidence = strongestEvidence(student).slice(0, 3);
   const answered = Object.values(student.skills || {}).filter(Number).length + (student.areas?.length ? 1 : 0);
   const totalResponses = TOOL_DEFINITIONS.length + 1;
   const responsePct = Math.round((answered / totalResponses) * 100);
   return `<tr>
     <td><div class="student-id"><span class="student-avatar">${initials(student.name)}</span><div><strong>${escapeHtml(student.name)}</strong><small>${escapeHtml(student.pronouns || "Pronouns not provided")}</small></div></div></td>
-    <td><span class="signal-badge ${score.band}">${score.band === "hardware" ? "←" : score.band === "software" ? "→" : "↔"} ${capitalize(score.band)}</span></td>
+    <td><span class="signal-badge ${score.band}" title="Raw questions-as-is position ${formatNumber(score.position)} / 100">${score.band === "hardware" ? "←" : score.band === "software" ? "→" : "↔"} ${capitalize(score.band)}</span></td>
     <td><div class="evidence-tags">${evidence.length ? evidence.map((item) => `<span>${escapeHtml(item.label)} · ${item.value}/3</span>`).join("") : "<span>No skill evidence</span>"}</div></td>
     <td><span class="response-meter"><i style="--fill:${responsePct}%"></i>${answered}/${totalResponses}</span></td>
     <td><div class="row-menu"><button data-action="edit" data-id="${student.id}" aria-label="Edit ${escapeHtml(student.name)}">✎</button><button data-action="delete" data-id="${student.id}" aria-label="Delete ${escapeHtml(student.name)}">×</button></div></td>
@@ -286,7 +286,6 @@ function handleDirectionBalanceChange(event) {
   state.teams = null;
   state.decisionLog = [];
   renderDirectionBalance();
-  renderRoster();
   renderPreview();
   renderScoringStatus();
   renderWorkedExample();
@@ -559,14 +558,14 @@ function handleSortModeChange(event) {
   saveState();
 }
 
-function calculateScoreBreakdown(student, includeContributions = true) {
+function calculateScoreBreakdown(student, includeContributions = true, directionBalance = state.directionBalance) {
   let signed = 0;
   let directionalEvidence = 0;
   let allEvidence = 0;
   let possibleEvidence = 0;
   let hardware = 0;
   let software = 0;
-  const directionWeights = getDirectionWeights();
+  const directionWeights = getDirectionWeights(directionBalance);
   const contributions = includeContributions ? [] : null;
   TOOL_DEFINITIONS.forEach((tool) => {
     const response = clamp(Number(student.skills?.[tool.key]) || 0, 0, 4);
@@ -625,6 +624,10 @@ function calculateScoreBreakdown(student, includeContributions = true) {
 
 function scoreStudent(student) {
   return calculateScoreBreakdown(student, false);
+}
+
+function scoreStudentRaw(student) {
+  return calculateScoreBreakdown(student, false, RAW_QUESTION_BALANCE);
 }
 
 function strongestEvidence(student) {

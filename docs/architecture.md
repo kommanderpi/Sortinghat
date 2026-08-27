@@ -9,10 +9,12 @@ flowchart LR
   CSV[Google Forms CSV] --> Parse[CSV parser]
   Manual[Manual student entry] --> State[Browser state]
   Parse --> State
-  State --> Score[Fixed data-driven scorer]
-  Score --> Worked[Page 2 worked example]
-  Score --> Balanced[Balanced cohorts]
-  Score --> Split[Skill-spectrum split]
+  State --> Raw[Raw scorer: questions as-is]
+  Raw --> Roster[Page 1 roster signal]
+  State --> Adjusted[Page 2 scorer: question balance]
+  Adjusted --> Worked[Page 2 worked example]
+  Adjusted --> Balanced[Balanced cohorts]
+  Adjusted --> Split[Skill-spectrum split]
   Balanced --> Results[Results and CSV export]
   Split --> Results
 ```
@@ -29,7 +31,13 @@ There are no per-tool, per-area, per-activity, or per-student weighting controls
 | Bridge | `0` | Does not move placement, but questionnaire evidence can still increase confidence. |
 | Software | `+1` | Moves a placement toward the Software end of the line. |
 
-The mappings are declared in [app.js](../app.js). Their values convey direction only, never relative strength within a category. A global Page 2 slider supplies the only directional adjustment: it applies one common multiplier to every mapped Hardware contribution and one common multiplier to every mapped Software contribution. Bridge has an effective multiplier of `1`, but its zero direction means it never contributes directional placement strength.
+The mappings are declared in [app.js](../app.js). Their values convey direction only, never relative strength within a category. Bridge has an effective multiplier of `1`, but its zero direction means it never contributes directional placement strength.
+
+### Page 1 raw signal and Page 2 adjusted score
+
+The roster on Page 1 intentionally shows the questionnaire **as written**. Its signal badge uses `scoreStudentRaw`, which calculates with `RAW_QUESTION_BALANCE`: this produces Hardware `1×` and Software `1×` multipliers. Its strongest-evidence labels are raw reported evidence values, rather than adjusted contributions. The Page 1 key and table label this as the raw questions-as-is signal so that the form’s unequal opportunity counts remain visible. Changing the Page 2 balance slider does not rerender or change this roster signal.
+
+The global Page 2 slider supplies the directional adjustment for `scoreStudent`. The Page 2 class preview, scoring status, worked example, and results render from that adjusted score. The Balanced optimizer’s position and directional metrics, as well as the Skill-spectrum split’s ranking, also use the adjusted score. Thus Page 1 is a stable diagnostic of the raw questionnaire, while Page 2 and cohort decisions reflect the selected question balance.
 
 The form has unequal directional capacity. Maximum raw evidence is calculated from every mapped tool at three points, every mapped area at one point, and every mapped recent activity at three points:
 
@@ -38,7 +46,7 @@ The form has unequal directional capacity. Maximum raw evidence is calculated fr
 | Hardware | `7 × 3` | `1 × 1` | `2 × 3` | `28` |
 | Software | `13 × 3` | `3 × 1` | `3 × 3` | `51` |
 
-The **Hardware / Software question-balance** slider ranges from 0 to 100, in 0.1-point steps, and records the Software share; Hardware receives the remaining share. With `H = 28`, `S = 51`, `T = H + S = 79`, and slider shares `h` and `s` as decimals, the shared multipliers are:
+The **Hardware / Software question-balance** slider on Page 2 ranges from 0 to 100, in 0.1-point steps, and records the Software share; Hardware receives the remaining share. With `H = 28`, `S = 51`, `T = H + S = 79`, and slider shares `h` and `s` as decimals, the shared multipliers are:
 
 ```text
 Hardware multiplier = h × T ÷ H
@@ -87,15 +95,15 @@ The question-balance slider does not modify either confidence total. A Bridge to
 
 The Scoring page places the global balance control above the formula and cohort-strategy controls. It shows the current Hardware / Software shares, the two resulting point multipliers, and the marked Questions-as-is position. The range input has an accessible label and value text; the marker is also exposed with its ratio and `1×` meaning.
 
-Moving the slider immediately updates placements, the roster, preview, scoring status, worked example, and results display. It clears existing teams and the decision log because those were produced with a different directional balance, then persists the updated value. The status card and generated decision log disclose the active Hardware and Software multipliers.
+Moving the slider immediately updates the Page 2 preview, scoring status, worked example, and results display. It does not rerender the Page 1 roster, whose signal remains raw questions-as-is. The change clears existing teams and the decision log because those were produced with a different directional balance, then persists the updated value. The status card and generated decision log disclose the active Hardware and Software multipliers.
 
 The instructor can select a loaded student for a live worked example. It lists each included contribution with its category multiplier in the signed calculation, signed-numerator amount, and directional-denominator amount, then displays total arithmetic, 0–100 placement, band, and confidence calculation. Manual rows explicitly state that their distance from the center is not adjusted. With no roster, the page asks for an import or a manual student; with no included evidence, it explains why no rows appear.
 
 ### Cohort strategies and tie-breaks
 
-**Balanced cohorts** sorts students furthest from Bridge first; ties use higher response confidence and then name. It assigns each student to minimize a loss based on avoidable cohort-size difference, average position, normalized hardware evidence, normalized software evidence, confidence, and professional experience. The implementation applies fixed trade-off coefficients to those cohort-level gaps, then accepts improving cross-cohort swaps for up to 20 passes. Those coefficients are an optimizer design choice, not evidence weights and do not change an individual student's placement calculation. The displayed balance score describes similarity of those totals; it is not a student-quality score.
+**Balanced cohorts** sorts students furthest from Bridge using the adjusted Page 2 score; ties use higher response confidence and then name. It assigns each student to minimize a loss based on avoidable cohort-size difference, average position, normalized hardware evidence, normalized software evidence, confidence, and professional experience. These position and directional metrics use the adjusted Page 2 score, not the raw Page 1 roster signal. The implementation applies fixed trade-off coefficients to those cohort-level gaps, then accepts improving cross-cohort swaps for up to 20 passes. Those coefficients are an optimizer design choice, not evidence weights and do not change an individual student's placement calculation. The displayed balance score describes similarity of those totals; it is not a student-quality score.
 
-**Skill-spectrum split** ranks the room from lower to higher data-derived position. Equal positions are ordered by higher response confidence and then name. The lower half, rounded up for an odd-sized class, becomes Hufflestuff; the upper half becomes Ravenworks, producing an approximately 50/50 division. Both cohort names are separate from Hardware, Bridge, and Software signals, and both cohorts complete both course modules.
+**Skill-spectrum split** ranks the room from lower to higher adjusted Page 2 position. Equal positions are ordered by higher response confidence and then name. The lower half, rounded up for an odd-sized class, becomes Hufflestuff; the upper half becomes Ravenworks, producing an approximately 50/50 division. Both cohort names are separate from Hardware, Bridge, and Software signals, and both cohorts complete both course modules.
 
 ### Persistent browser state and migration
 

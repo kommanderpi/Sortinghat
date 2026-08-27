@@ -74,6 +74,10 @@ const assertions = `
   assert(neutralOnly.position === 50 && neutralOnly.confidence > 0, "A Bridge response should build confidence without moving position");
   const opposedStudent = sampleStudent("Opposed", "", 0, { javascript: 4, microcontrollers: 4 });
   assert(scoreStudent(opposedStudent).position < 50, "At equal opportunity, a Hardware point is stronger because the form offers fewer Hardware points");
+  assert(scoreStudentRaw(opposedStudent).position === 50, "Page 1 raw scoring should always use 1× Hardware and 1× Software points");
+  const rawRosterHtml = rosterRow(opposedStudent);
+  assert(rawRosterHtml.includes("signal-badge bridge") && rawRosterHtml.includes("Raw questions-as-is position 50 / 100"), "Page 1 should render the unadjusted raw signal rather than the Page 2 score");
+  assert(indexSource.includes("Signals on this page show the raw, unadjusted questions as-is") && indexSource.includes("<th>Raw signal</th>"), "Page 1 should label its signals as raw and unadjusted");
   const technologyArea = sampleStudent("Technology", "", 0, {});
   technologyArea.areas = ["areaTechnology"];
   assert(scoreStudent(technologyArea).position === 100, "A selected Software area should contribute one Software evidence point");
@@ -143,12 +147,26 @@ const assertions = `
   state.decisionLog = ["stale result"];
   handleDirectionBalanceChange({ target: { value: "25" } });
   assert(state.directionBalance === 25 && state.teams === null && state.decisionLog.length === 0, "Moving the balance slider should invalidate prior cohort results");
-  assert(balanceRenderCount === 5 && balanceSaveCount === 1, "Moving the balance slider should refresh dependent views and persist once");
+  assert(balanceRenderCount === 4 && balanceSaveCount === 1, "Moving the balance slider should refresh adjusted views, leave the raw roster unchanged, and persist once");
 
   renderResults = () => {};
   showView = () => {};
   showToast = () => {};
   saveState = () => {};
+  const balanceSensitive = sampleStudent("Balance sensitive", "", 0, { microcontrollers: 2 });
+  balanceSensitive.directPosition = 5;
+  const centeredComparison = sampleStudent("Centered comparison", "", 0, {});
+  centeredComparison.directPosition = 3;
+  state.directionBalance = 25;
+  const adjustedOrientationGap = Math.abs(scoreStudent(balanceSensitive).position - scoreStudent(centeredComparison).position);
+  const rawOrientationGap = Math.abs(scoreStudentRaw(balanceSensitive).position - scoreStudentRaw(centeredComparison).position);
+  const adjustedBalanceMetrics = calculateBalance([balanceSensitive], [centeredComparison]);
+  assert(Math.abs(adjustedBalanceMetrics.orientationGap - adjustedOrientationGap) < 0.000001 && Math.abs(adjustedBalanceMetrics.orientationGap - rawOrientationGap) > 1, "Balanced-mode metrics should use adjusted Page 2 scores rather than raw Page 1 signals");
+  assert(scoreStudent(balanceSensitive).position < scoreStudent(centeredComparison).position && scoreStudentRaw(balanceSensitive).position > scoreStudentRaw(centeredComparison).position, "Regression fixture should reverse raw and adjusted ordering");
+  state.students = [balanceSensitive, centeredComparison];
+  state.sortMode = "split";
+  runSort(false);
+  assert(state.teams.A[0] === balanceSensitive.id && state.teams.B[0] === centeredComparison.id, "Spectrum split should rank adjusted Page 2 positions rather than raw Page 1 signals");
   state.students = structuredClone(SAMPLE_STUDENTS);
   state.datasetLabel = "Test roster";
   state.sortMode = "balanced";
@@ -200,5 +218,5 @@ const assertions = `
 const documentStub = { addEventListener() {} };
 const localStorageStub = { getItem() { return null; }, setItem() {} };
 
-const execute = new Function("document", "localStorage", "structuredClone", source + assertions);
-execute(documentStub, localStorageStub, structuredClone);
+const execute = new Function("document", "localStorage", "structuredClone", "indexSource", source + assertions);
+execute(documentStub, localStorageStub, structuredClone, indexSource);
